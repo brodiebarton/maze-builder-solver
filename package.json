@@ -1,0 +1,17 @@
+{
+  "name": "barton_ai_final_proj",
+  "version": "1.0.0",
+  "description": "",
+  "main": "sketch.js",
+  "dependencies": {
+    "eslint": "^5.9.0"
+  },
+  "devDependencies": {
+    "eslint-config-p5js": "^1.0.1"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC"
+}
