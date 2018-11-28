@@ -9,14 +9,18 @@ class Maze {
 		this.width = width;
 		this.height = height;
 		this.cells = [];
-		this.build();
+		this.numVisited = 0;
+		this.totalCells = 0;
+		this.init();
 	}
 
-	build() {
+	init() {
 		cellWidth = 40;
 		cellHeight = 40;
 		let numCellsX = floor(this.width / cellWidth);
 		let numCellsY = floor(this.height / cellHeight);
+		this.totalCells = numCellsX * numCellsY;
+
 		for (let i = 0; i < numCellsY; i++) {
 			this.cells.push(new Array(numCellsX));
 			for (let j = 0; j < this.cells[i].length; j++) {
@@ -35,29 +39,39 @@ class Cell {
 		this.posX = undefined;
 		this.posY = undefined;
 		this.walls = new Array(4);
+		this.wallVisibility = [true,true,true,true];
 		this.isVisited = false;
 	}
 
 	display(x,y) {
 		
-		let lx = y * cellWidth;
-		let ly = x * cellHeight;
-
+		let lx = x * cellWidth;
+		let ly = y * cellHeight;
+	
 		stroke(255);
 		// top
-		this.walls[0] = line(lx,ly,lx + cellWidth, ly);
+		if (this.wallVisibility[0]) {
+			this.walls[0] = line(lx,ly,lx + cellWidth, ly);
+		}
 
 		// right
-		this.walls[1] = line(lx + cellWidth, ly, lx + cellWidth, ly + cellHeight);
+		if (this.wallVisibility[1]) {
+			this.walls[1] = line(lx + cellWidth, ly, lx + cellWidth, ly + cellHeight);
+		}
 
 		// bottom
-		this.walls[2] = line(lx + cellWidth, ly + cellHeight, lx, ly + cellHeight);
+		if (this.wallVisibility[2]) {
+			this.walls[2] = line(lx + cellWidth, ly + cellHeight, lx, ly + cellHeight);
+		}
 
 		// left
-		this.walls[3] = line(lx, ly + cellHeight, lx, ly);
+		if (this.wallVisibility[3]) {
+			this.walls[3] = line(lx, ly + cellHeight, lx, ly);
+		}
 
 		if (this.isVisited) {
-			fill(color(200,0,0));
+			noStroke();
+			fill(color(200,0,0,100));
 			rect(x * cellWidth,y * cellHeight,cellWidth,cellHeight);
 		}
 	}
@@ -66,11 +80,6 @@ class Cell {
 	// Collect unvisited cells
 	checkNeighbors(rowIndex, colIndex, maze) {
 		let unvisitedCells = [];
-
-		console.log(`top = ${rowIndex - 1}, ${colIndex}`);
-		console.log(`right = ${rowIndex}, ${colIndex + 1}`);
-		console.log(`bottom = ${rowIndex + 1}, ${colIndex}`);
-		console.log(`left = ${rowIndex}, ${colIndex - 1}`);
 
 		// top
 		if (rowIndex - 1 >= 0) {
@@ -107,6 +116,7 @@ class MazeBuilder {
 		this.cellStack = [];
 		this.mazeCells = cells;
 		this.initialize(this.mazeCells);
+		this.isBuilding = false;
 	}
 
 	initialize(cells) {
@@ -115,6 +125,8 @@ class MazeBuilder {
 		let j = 0;
 		this.currentCell = cells[i][j];
 		this.currentCell.isVisited = true;
+		this.currentCell.wallVisibility[1] = false;
+		MyMaze.numVisited++;
 	}
 
 	getCellIndex(c) {
@@ -131,33 +143,78 @@ class MazeBuilder {
 		return index2D;
 	}
 
+	removeWalls(currentCell, nextCell) {
+		let cIndexes = this.getCellIndex(currentCell);
+		let nIndexes = this.getCellIndex(nextCell);
+
+		let xMove = nIndexes[1] - cIndexes[1];
+		let yMove = nIndexes[0] - cIndexes[0];
+
+		console.log(`xMove: ${xMove}
+		yMove: ${yMove}`);
+		if (xMove == -1) {
+			console.log("move left");
+			this.mazeCells[cIndexes[0]][cIndexes[1]].wallVisibility[3] = false;
+			this.mazeCells[nIndexes[0]][nIndexes[1]].wallVisibility[1] = false;
+		}
+		if (xMove == 1) {
+			console.log("move right");
+			this.mazeCells[cIndexes[0]][cIndexes[1]].wallVisibility[1] = false;
+			this.mazeCells[nIndexes[0]][nIndexes[1]].wallVisibility[3] = false;
+		}
+		if (yMove == -1) {
+			console.log("move up");
+			this.mazeCells[cIndexes[0]][cIndexes[1]].wallVisibility[0] = false;
+			this.mazeCells[nIndexes[0]][nIndexes[1]].wallVisibility[2] = false;
+		}
+		if (yMove == 1) {
+			console.log("move down");
+			this.mazeCells[cIndexes[0]][cIndexes[1]].wallVisibility[2] = false;
+			this.mazeCells[nIndexes[0]][nIndexes[1]].wallVisibility[0] = false;
+		}
+	}
+
 	build() {
 		let indexes = this.getCellIndex(this.currentCell);
 
 		let neighbors = this.currentCell.checkNeighbors(indexes[0], indexes[1],this.mazeCells);
 		
-		let randIndex = floor(random(0,neighbors.length));
-		let newPosition = this.getCellIndex(neighbors[randIndex]);
+		if (neighbors.length > 0) {
+			let randIndex = floor(random(0,neighbors.length));
+			let newPosition = this.getCellIndex(neighbors[randIndex]);
 
-		this.cellStack.push(this.currentCell);
-		console.log("stack length = " + this.cellStack.length);
-		console.log(`new pos: ${newPosition[0]} , ${newPosition[1]}`);
+			this.cellStack.push(this.currentCell);
 
-		// this.currentCell = this.mazeCells[newPosition[0],newPosition[1]];
-		// this.currentCell.isVisited = true;
-		
+			// remove walls
+			this.removeWalls(this.currentCell,this.mazeCells[newPosition[0]][newPosition[1]]);
+
+			this.currentCell = this.mazeCells[newPosition[0]][newPosition[1]];
+			this.currentCell.isVisited = true;
+			MyMaze.numVisited++;
+		} else {
+			if (this.cellStack.length > 0) {
+				let backTrackCell = this.cellStack.pop();
+				this.currentCell = backTrackCell;
+			}
+		}
+		// console.log(`MyMaze.numVisited: ${MyMaze.numVisited}\ntotalCells: ${MyMaze.totalCells}`);
+
+		if (MyMaze.numVisited == MyMaze.totalCells) {
+			this.isBuilding = false;
+		}
 	}
 }
 
 function setup() {
-	canvas = createCanvas(400, 400);
+	canvas = createCanvas(401, 401);
 	canvas.parent("sketch-container1");
 	MyMaze = new Maze(400,400);
 	Builder = new MazeBuilder(MyMaze.cells);
 
 	const buildBtn = document.getElementById("buildButton");
 	buildBtn.addEventListener("click", () => {
-		Builder.build();
+		Builder.isBuilding = true;
+		// Builder.build();
 	});
 
 	const solveBtn = document.getElementById("solveButton");
@@ -176,6 +233,10 @@ function draw() {
 		}
 	}
 
+	if (Builder.isBuilding) {
+		Builder.build();
+	}
+	
 }
 
 // function windowResized() {
