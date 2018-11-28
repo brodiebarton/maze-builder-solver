@@ -1,5 +1,6 @@
 let canvas;
 let MyMaze;
+let Solver;
 let cellWidth;
 let cellHeight;
 
@@ -20,34 +21,23 @@ class Maze {
 			this.cells.push(new Array(numCellsX));
 			for (let j = 0; j < this.cells[i].length; j++) {
 				this.cells[i][j] = new Cell(cellWidth,cellHeight);
+				this.cells[i][j].posX = this.cells[i][j].x * j;
+				this.cells[i][j].posY = this.cells[i][j].y * i;
 			}
 		}
 	}
 }
 
-/* Recursive Backtracker
-* 1. Make the initial cell the current cell and mark it as visited
-* 2. While there are unvisited cells
-*	A. If the current cell has any neighbours which have not been visited
-*		1. Choose randomly one of the unvisited neighbours
-*		2. Push the current cell to the stack
-*		3. Remove the wall between the current cell and the chosen cell
-*		4. Make the chosen cell the current cell and mark it as visited
-*	B. Else if stack is not empty
-*		1. Pop a cell from the stack
-*		2. Make it the current cell
-*/ 
-
 class Cell {
 	constructor(x,y) {
 		this.x = x;
 		this.y = y;
+		this.posX = undefined;
+		this.posY = undefined;
 		this.walls = new Array(4);
 		this.isVisited = false;
 	}
-	get area() {
-		return this.x * this.y;
-	}
+
 	display(x,y) {
 		
 		let lx = y * cellWidth;
@@ -71,9 +61,34 @@ class Cell {
 	}
 }
 
+class MazeSolver {
+	constructor(cells) {
+		this.currentCell = undefined;
+		this.cellStack = [];
+		this.initialize(cells);
+		console.log(`${this.currentCell.posX} , ${this.currentCell.posY}`);
+	}
+
+	initialize(cells) {
+		// initialize cellStack
+		for (let i = cells.length - 1; i >= 0; i--) {
+			for (let j = cells[i].length - 1; j >= 0; j--) {
+				this.cellStack.push(cells[i][j]);
+			}
+		}
+		// initialize / assign currentCell
+		this.currentCell = this.cellStack.pop();
+	}
+
+	solve() {
+
+	}
+}
+
 function setup() {
 	canvas = createCanvas(400, 400);
 	MyMaze = new Maze(400,400);
+	Solver = new MazeSolver(MyMaze.cells);
 }
 
 function draw() {
