@@ -1,3 +1,31 @@
-/* body {
-	background-color:rgb(31, 23, 141);
-} */
+body {
+	/* background-color:rgb(31, 23, 141); */
+	display: flex;
+	flex-direction: column;
+	user-select: none;
+}
+
+#sketch-container1 {
+	margin: 0 auto;
+}
+
+#ui {
+	margin: 0 auto;
+}
+
+.buttonStyle {
+    user-select: none;
+    background-color: rgb(0, 140, 186); 
+    color: white;
+    border: none;
+    font-weight: bold;
+    padding: 15px 32px;
+    text-align: center;
+    text-decoration: none;
+    font-size: 16px;
+    margin: 1em;
+}
+.buttonStyle:hover {
+    background-color: rgb(59, 206, 255);
+    font-weight: bold;
+} 

@@ -1,6 +1,6 @@
 let canvas;
 let MyMaze;
-let Solver;
+let Builder;
 let cellWidth;
 let cellHeight;
 
@@ -45,50 +45,127 @@ class Cell {
 
 		stroke(255);
 		// top
-		line(lx,ly,lx + cellWidth, ly);
+		this.walls[0] = line(lx,ly,lx + cellWidth, ly);
 
 		// right
-		line(lx + cellWidth, ly, lx + cellWidth, ly + cellHeight);
+		this.walls[1] = line(lx + cellWidth, ly, lx + cellWidth, ly + cellHeight);
 
 		// bottom
-		line(lx + cellWidth, ly + cellHeight, lx, ly + cellHeight);
+		this.walls[2] = line(lx + cellWidth, ly + cellHeight, lx, ly + cellHeight);
 
 		// left
-		line(lx, ly + cellHeight, lx, ly);
+		this.walls[3] = line(lx, ly + cellHeight, lx, ly);
 
-		// fill(255);
-		// rect(x * cellWidth,y * cellHeight,cellWidth,cellHeight);
+		if (this.isVisited) {
+			fill(color(200,0,0));
+			rect(x * cellWidth,y * cellHeight,cellWidth,cellHeight);
+		}
+	}
+
+	// Check neighboring cells
+	// Collect unvisited cells
+	checkNeighbors(rowIndex, colIndex, maze) {
+		let unvisitedCells = [];
+
+		console.log(`top = ${rowIndex - 1}, ${colIndex}`);
+		console.log(`right = ${rowIndex}, ${colIndex + 1}`);
+		console.log(`bottom = ${rowIndex + 1}, ${colIndex}`);
+		console.log(`left = ${rowIndex}, ${colIndex - 1}`);
+
+		// top
+		if (rowIndex - 1 >= 0) {
+			if (!maze[rowIndex - 1][colIndex].isVisited) {
+				unvisitedCells.push(maze[rowIndex - 1][colIndex]);
+			}
+		}
+		// right
+		if (colIndex + 1 < maze[rowIndex].length) {
+			if (!maze[rowIndex][colIndex + 1].isVisited) {
+				unvisitedCells.push(maze[rowIndex][colIndex + 1]);
+			}
+		}
+		// bottom
+		if (rowIndex + 1 < maze.length) {
+			if (!maze[rowIndex + 1][colIndex].isVisited) {
+				unvisitedCells.push(maze[rowIndex + 1][colIndex]);
+			}
+		}
+		// left
+		if (colIndex - 1 >= 0) {
+			if (!maze[rowIndex][colIndex - 1].isVisited) {
+				unvisitedCells.push(maze[rowIndex][colIndex - 1]);
+			}
+		}
+
+		return unvisitedCells;
 	}
 }
 
-class MazeSolver {
+class MazeBuilder {
 	constructor(cells) {
 		this.currentCell = undefined;
 		this.cellStack = [];
-		this.initialize(cells);
-		console.log(`${this.currentCell.posX} , ${this.currentCell.posY}`);
+		this.mazeCells = cells;
+		this.initialize(this.mazeCells);
 	}
 
 	initialize(cells) {
-		// initialize cellStack
-		for (let i = cells.length - 1; i >= 0; i--) {
-			for (let j = cells[i].length - 1; j >= 0; j--) {
-				this.cellStack.push(cells[i][j]);
-			}
-		}
 		// initialize / assign currentCell
-		this.currentCell = this.cellStack.pop();
+		let i = 0;
+		let j = 0;
+		this.currentCell = cells[i][j];
+		this.currentCell.isVisited = true;
 	}
 
-	solve() {
+	getCellIndex(c) {
+		let index2D = new Array(2);
 
+		for (let i = 0; i < this.mazeCells.length; i++) {
+			let index2 = this.mazeCells[i].findIndex(x => x === c);
+			if (index2 != -1) {
+				index2D[1] = index2;
+				index2D[0] = i;
+			}
+		}
+
+		return index2D;
+	}
+
+	build() {
+		let indexes = this.getCellIndex(this.currentCell);
+
+		let neighbors = this.currentCell.checkNeighbors(indexes[0], indexes[1],this.mazeCells);
+		
+		let randIndex = floor(random(0,neighbors.length));
+		let newPosition = this.getCellIndex(neighbors[randIndex]);
+
+		this.cellStack.push(this.currentCell);
+		console.log("stack length = " + this.cellStack.length);
+		console.log(`new pos: ${newPosition[0]} , ${newPosition[1]}`);
+
+		// this.currentCell = this.mazeCells[newPosition[0],newPosition[1]];
+		// this.currentCell.isVisited = true;
+		
 	}
 }
 
 function setup() {
 	canvas = createCanvas(400, 400);
+	canvas.parent("sketch-container1");
 	MyMaze = new Maze(400,400);
-	Solver = new MazeSolver(MyMaze.cells);
+	Builder = new MazeBuilder(MyMaze.cells);
+
+	const buildBtn = document.getElementById("buildButton");
+	buildBtn.addEventListener("click", () => {
+		Builder.build();
+	});
+
+	const solveBtn = document.getElementById("solveButton");
+	solveBtn.addEventListener("click", () => {
+
+	});
+
+	
 }
 
 function draw() {
@@ -98,6 +175,7 @@ function draw() {
 			MyMaze.cells[i][j].display(j,i);
 		}
 	}
+
 }
 
 // function windowResized() {
