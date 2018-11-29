@@ -1,6 +1,9 @@
 let canvas;
 let MyMaze;
 let Builder;
+let Solver_AStar;
+let startNode;
+let endNode;
 let cellWidth;
 let cellHeight;
 
@@ -10,6 +13,8 @@ class Maze {
 		this.height = height;
 		this.cells = [];
 		this.numVisited = 0;
+		this.numCellsX = undefined;
+		this.numCellsY = undefined;
 		this.totalCells = 0;
 		this.init();
 	}
@@ -17,12 +22,12 @@ class Maze {
 	init() {
 		cellWidth = 40;
 		cellHeight = 40;
-		let numCellsX = floor(this.width / cellWidth);
-		let numCellsY = floor(this.height / cellHeight);
-		this.totalCells = numCellsX * numCellsY;
+		this.numCellsX = floor(this.width / cellWidth);
+		this.numCellsY = floor(this.height / cellHeight);
+		this.totalCells = this.numCellsX * this.numCellsY;
 
-		for (let i = 0; i < numCellsY; i++) {
-			this.cells.push(new Array(numCellsX));
+		for (let i = 0; i < this.numCellsY; i++) {
+			this.cells.push(new Array(this.numCellsX));
 			for (let j = 0; j < this.cells[i].length; j++) {
 				this.cells[i][j] = new Cell(cellWidth,cellHeight);
 				this.cells[i][j].posX = this.cells[i][j].x * j;
@@ -150,25 +155,19 @@ class MazeBuilder {
 		let xMove = nIndexes[1] - cIndexes[1];
 		let yMove = nIndexes[0] - cIndexes[0];
 
-		console.log(`xMove: ${xMove}
-		yMove: ${yMove}`);
 		if (xMove == -1) {
-			console.log("move left");
 			this.mazeCells[cIndexes[0]][cIndexes[1]].wallVisibility[3] = false;
 			this.mazeCells[nIndexes[0]][nIndexes[1]].wallVisibility[1] = false;
 		}
 		if (xMove == 1) {
-			console.log("move right");
 			this.mazeCells[cIndexes[0]][cIndexes[1]].wallVisibility[1] = false;
 			this.mazeCells[nIndexes[0]][nIndexes[1]].wallVisibility[3] = false;
 		}
 		if (yMove == -1) {
-			console.log("move up");
 			this.mazeCells[cIndexes[0]][cIndexes[1]].wallVisibility[0] = false;
 			this.mazeCells[nIndexes[0]][nIndexes[1]].wallVisibility[2] = false;
 		}
 		if (yMove == 1) {
-			console.log("move down");
 			this.mazeCells[cIndexes[0]][cIndexes[1]].wallVisibility[2] = false;
 			this.mazeCells[nIndexes[0]][nIndexes[1]].wallVisibility[0] = false;
 		}
@@ -205,21 +204,203 @@ class MazeBuilder {
 	}
 }
 
+class MazeSolver_AStar {
+	constructor(start,goal) {
+		this.start = start;
+		this.goal = goal;
+		this.openList = [];
+		this.closedList = [];
+		this.path = [];
+		this.currentNode = start;
+		this.isSolving = false;
+	}
+
+	calcGScore(node) {
+		return this.currentNode.gScore + 1;
+	}
+
+	calcHScore(node) {
+		let h = abs(node.posX - endNode.posX) + abs(node.posY - endNode.posY);
+		return h;
+	}
+
+	calcDistance(n1,n2) {
+		let d = abs(n1.posX - n2.posX) - abs(n1.posY - n2.posY);
+		return d;
+	}
+
+	calcFScore(node) {
+		return node.gScore + node.hScore;
+	}
+
+	solve(maze) {
+		// while openlist is not empty
+		if (this.openList.length <= 0) {
+			this.isSolving = false;
+		}
+		let lowestFNode = 0;
+
+		for (let i = 0; i < this.openList.length; i++) {
+			if (this.openList[i].fScore < this.openList[lowestFNode].fScore) {
+				lowestFNode = i;
+			}
+		}
+		this.currentNode = this.openList[lowestFNode];
+
+		if (this.currentNode === endNode) {
+			// PATH FOUND
+			this.isSolving = false;
+		} else {
+			// Helper.removeFromArray(this.openList,this.currentNode);
+			this.openList.splice(lowestFNode,1);
+			this.closedList.push(this.currentNode);
+			
+			// Find neighboring walkable nodes
+			let available = this.checkNeighbors(this.currentNode, maze);
+
+			for (let i = 0; i < available.length; i++) {
+				let n = available[i];
+				if (!this.closedList.includes(n)) {
+					let tempGScore = this.currentNode.gScore + 1;
+					let nPath = false;
+					if (this.openList.includes(n)) {
+						if (tempGScore < n.gScore) {
+							n.gScore = tempGScore;
+							nPath = true;
+						}
+					} else {
+						n.gScore = tempGScore;
+						nPath = true;
+						this.openList.push(n);
+					}
+					if (nPath) {
+						n.hScore = this.calcHScore(n);
+						n.fScore = this.calcFScore(n);
+						n.cameFrom = this.currentNode;
+					}
+				}
+			}
+
+			// available.forEach((n) => {
+			// 	if (!this.closedList.includes(n)) {
+			// 		if (!this.openList.includes(n)) {
+			// 			n.gScore = this.calcGScore(n);
+			// 			n.hScore = this.calcHScore(n);
+			// 			n.fScore = this.calcFScore(n);
+			// 			n.cameFrom = this.currentNode;
+			// 			this.openList.push(n);
+			// 		} else {
+
+			// 		}
+			// 	}
+			// });
+
+			console.log("open list:");
+			console.log(this.openList);
+			console.log("closed list:");
+			console.log(this.closedList);
+		}
+	}
+
+	checkNeighbors(node,maze) {
+		let walkableNodes = [];
+
+		// top
+		if (node.posY - 1 >= 0) {
+			if (maze.cells[node.posY - 1][node.posX].wallVisibility[2] == false) {
+				//top
+				// console.log(maze.cells[node.posY - 1][node.posX]);
+				let wNode = new AStar_Node(node.posX,node.posY - 1);
+				walkableNodes.push(wNode);
+				// walkableNodes.push(maze.cells[node.posY - 1][node.posX]);
+			}
+		}
+		
+		// right
+		if (node.posX + 1 < maze.cells[node.posX].length) {
+			if (maze.cells[node.posY][node.posX + 1].wallVisibility[3] == false) {
+				//right
+				// console.log(maze.cells[node.posY][node.posX + 1]);
+				let wNode = new AStar_Node(node.posX + 1, node.posY);
+				walkableNodes.push(wNode);
+				// walkableNodes.push(maze.cells[node.posY][node.posX + 1]);
+			}
+		}
+		// bottom
+		if (node.posY + 1 < maze.cells.length) {
+			if (maze.cells[node.posY + 1][node.posX].wallVisibility[0] == false) {
+				//bottom
+				// console.log(maze.cells[node.posY + 1][node.posX]);
+				let wNode = new AStar_Node(node.posX,node.posY + 1);
+				walkableNodes.push(wNode);
+				// walkableNodes.push(maze.cells[node.posY + 1][node.posX]);
+			}
+		}
+		// left
+		if (node.posX - 1 >= 0) {
+			if (maze.cells[node.posY][node.posX - 1].wallVisibility[1] == false) {
+				//left
+				// console.log(maze.cells[node.posY][node.posX - 1]);
+				let wNode = new AStar_Node(node.posX - 1,node.posY);
+				walkableNodes.push(wNode);
+				// walkableNodes.push(maze.cells[node.posY][node.posX - 1]);
+			}
+		}
+
+		walkableNodes.forEach((n) => {
+			n.color = color(200,200,200);
+		});
+
+		return walkableNodes;
+	}
+}
+
+class AStar_Node {
+	constructor(x,y) {
+		this.posX = x;
+		this.posY = y;
+		this.cameFrom = undefined;
+		this.gScore = 0;
+		this.hScore = 0;
+		this.fScore = 0;
+		this.color = color(200,200,200);
+	}
+
+	display() {
+		stroke(this.color);
+		noFill();
+		rect((this.posX * cellWidth) + cellWidth / 4,(this.posY * cellHeight) + cellHeight / 4, cellWidth / 2, cellHeight / 2);
+	}
+}
+
 function setup() {
 	canvas = createCanvas(401, 401);
 	canvas.parent("sketch-container1");
 	MyMaze = new Maze(400,400);
 	Builder = new MazeBuilder(MyMaze.cells);
+	let startIndex = Builder.getCellIndex(MyMaze.cells[0][0]);
+	let endIndex = Builder.getCellIndex(MyMaze.cells[MyMaze.numCellsY - 1][MyMaze.numCellsX - 1]);
+	
+	startNode = new AStar_Node(startIndex[1],startIndex[0]);
+	endNode = new AStar_Node(endIndex[1],endIndex[0]);
+	Solver_AStar = new MazeSolver_AStar(startNode,endNode);
+
+	// Calculate startNode h and f scores
+	startNode.hScore = Solver_AStar.calcHScore(startNode);
+	startNode.fScore = Solver_AStar.calcFScore(startNode);
+
+	Solver_AStar.openList.push(startNode);
 
 	const buildBtn = document.getElementById("buildButton");
 	buildBtn.addEventListener("click", () => {
-		Builder.isBuilding = true;
+		Builder.isBuilding = !Builder.isBuilding;
 		// Builder.build();
 	});
 
 	const solveBtn = document.getElementById("solveButton");
 	solveBtn.addEventListener("click", () => {
-
+		// Solver_AStar.solve(MyMaze);
+		Solver_AStar.isSolving = !Solver_AStar.isSolving;
 	});
 
 	
@@ -227,14 +408,41 @@ function setup() {
 
 function draw() {
 	background(color(10,10,10));
+	
+
+	//display start and goal
+	startNode.color = color(150,150,150);
+	startNode.display();
+	endNode.color = color(0,200,0);
+	endNode.display();
+
+	// display maze
 	for (let i = 0; i < MyMaze.cells.length; i++) {
 		for (let j = 0; j < MyMaze.cells[i].length; j++) {
 			MyMaze.cells[i][j].display(j,i);
 		}
 	}
 
+	// Build Button Triggers Building Animation
 	if (Builder.isBuilding) {
 		Builder.build();
+	}
+
+	if (Solver_AStar.isSolving) {
+		Solver_AStar.solve(MyMaze);
+	}
+
+	if(Solver_AStar.openList.length > 0) {
+		Solver_AStar.openList.forEach((n) => {
+			n.display();
+		});
+	}
+
+	if(Solver_AStar.closedList.length > 0) {
+		Solver_AStar.closedList.forEach((n) => {
+			n.color = color(255,0,0);
+			n.display();
+		});
 	}
 	
 }
