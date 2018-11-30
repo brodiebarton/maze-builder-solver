@@ -2,6 +2,7 @@ let canvas;
 let MyMaze;
 let Builder;
 let Solver_AStar;
+let SAgent;
 let startNode;
 let endNode;
 let cellWidth;
@@ -117,6 +118,146 @@ class Cell {
 	}
 }
 
+class SimpleAgent {
+	constructor(startX,startY) {
+		this.posX = startX;
+		this.posY = startY;
+		this.prevNode = undefined;
+		this.deltaX = 0;
+		this.deltaY = 0;
+		this.color = color(0,0,255);
+		this.direction = undefined;
+		this.availableMoves = [false,false,false,false]; // top, right, down, left
+	}
+
+	determineDirection() {
+		// Is At StartNode
+		if (this.posX == startNode.posX && this.posY == startNode.posY) {
+			if (MyMaze.cells[startNode.posY][startNode.posX].wallVisibility[0] == false) {
+				this.deltaY = -1;
+				return "up";
+			}
+			if (MyMaze.cells[startNode.posY][startNode.posX].wallVisibility[1] == false) {
+				this.deltaX = 1;
+				return "right";
+			}
+			if (MyMaze.cells[startNode.posY][startNode.posX].wallVisibility[2] == false) {
+				this.deltaY = 1;
+				return "down";
+			}
+			if (MyMaze.cells[startNode.posY][startNode.posX].wallVisibility[3] == false) {
+				this.deltaX = -1;
+				return "left";
+			}
+		}
+		if (this.prevNode != undefined) {
+			this.deltaX = this.posX - this.prevNode.posX;
+			this.deltaY = this.posY - this.prevNode.posY;
+			
+			// Moved Left
+			if (this.deltaX == -1) {
+				console.log("FACING LEFT");
+				return "left";
+			}
+
+			// Moved Right
+			if (this.deltaX == 1) {
+				console.log("FACING RIGHT");
+				return "right";
+			}
+
+			// Moved Up
+			if (this.deltaY == -1) {
+				console.log("FACING UP");
+				return "up";
+			}
+
+			// Moved Down
+			if (this.deltaY == 1) {
+				console.log("FACING DOWN");
+				return "down";
+			}
+		}
+	}
+
+	move() {
+
+		// if can move left
+		if (this.availableMoves[3] == true) {
+			// move left
+			this.posX = this.posX - 1;
+			this.prevNode = MyMaze.cells[this.posY][this.posX + 1];
+		}
+
+		let cantGoStraight = false;
+		// if cannot move left 
+		let direction = this.determineDirection();
+		console.log(direction);
+		if (this.availableMoves[3] == false) {
+			// go straight
+			if (this.deltaX != 0) {
+				this.posX = this.posX + this.deltaX;
+				this.prevNode = MyMaze.cells[this.posY][this.posX - this.deltaX];
+			} else if (this.deltaY != 0) {
+				this.posY = this.posY + this.deltaY;
+				this.prevNode = MyMaze.cells[this.posY - this.deltaY][this.posX];
+			} else {
+				cantGoStraight = true;
+			}
+		}
+		// if cannot move left, 
+		if (this.availableMoves[3] == false) {
+			// and cannot go straight
+			if (cantGoStraight) {
+				// go right
+				this.posX = this.posX + 1;
+				this.prevNode = MyMaze.cells[this.posY][this.posX - 1];
+			}
+		}
+		
+		// if cannot go left, 
+		if (this.availableMoves[3] == false) {
+			// and cannot go straight 
+			if (cantGoStraight) {
+				// and not right
+				if (this.availableMoves[1] == false) {
+
+				}
+
+			}
+		}
+
+		//or right,
+		// turn around
+	}
+
+	checkWalls(currentPos) {
+		let indexOfCurrent = Builder.getCellIndex(currentPos);
+		console.log(currentPos);
+		if (currentPos.wallVisibility[0] == false) {
+			console.log("CAN MOVE UP");
+			this.availableMoves[0] = true;
+		}
+		if (currentPos.wallVisibility[1] == false) {
+			console.log("CAN MOVE RIGHT");
+			this.availableMoves[1] = true;
+		}
+		if (currentPos.wallVisibility[2] == false) {
+			console.log("CAN MOVE DOWN");
+			this.availableMoves[2] = true;
+		}
+		if (currentPos.wallVisibility[3] == false) {
+			console.log("CAN MOVE LEFT");
+			this.availableMoves[3] = true;
+		}
+	}
+
+	display() {
+		fill(this.color);
+		ellipse((this.posX * cellWidth) + cellWidth / 2,(this.posY * cellHeight) + cellHeight / 2, cellWidth / 1.5, cellHeight / 1.5);
+	}
+}
+
 class MazeBuilder {
 	constructor(cells) {
 		this.currentCell = undefined;
@@ -132,7 +273,6 @@ class MazeBuilder {
 		let j = 0;
 		this.currentCell = cells[i][j];
 		this.currentCell.isVisited = true;
-		this.currentCell.wallVisibility[1] = false;
 		MyMaze.numVisited++;
 	}
 
@@ -198,7 +338,6 @@ class MazeBuilder {
 				this.currentCell = backTrackCell;
 			}
 		}
-		// console.log(`MyMaze.numVisited: ${MyMaze.numVisited}\ntotalCells: ${MyMaze.totalCells}`);
 
 		if (MyMaze.numVisited == MyMaze.totalCells) {
 			this.isBuilding = false;
@@ -281,6 +420,7 @@ class MazeSolver_AStar {
 			this.isSolving = false;
 		}
 
+		// Chose nod with lowesy f score
 		let lowestFNode = 0;
 		for (let i = 0; i < this.openList.length; i++) {
 			if (this.openList[i].fScore < this.openList[lowestFNode].fScore) {
@@ -300,39 +440,18 @@ class MazeSolver_AStar {
 			return;
 		} else {
 			Helper.removeFromArray(this.openList,this.currentNode);
-			// this.openList.splice(lowestFNode,1);
 			this.closedList.push(this.currentNode);
-
-			// console.log("OPEN LIST:");
-			// console.log("____________");
-			// console.log(this.openList);
-			// this.openList.forEach((n) =>{
-			// 	console.log(`${n.pos[0]} , ${n.pos[1]}`);
-			// });
-			// console.log("____________");
-			// console.log("- - - - - - ");
-
-			// console.log("CLOSED LIST:");
-			// console.log("____________");
-			// console.log(this.closedList);
-			// this.closedList.forEach((n) =>{
-			// 	console.log(`${n.pos[0]} , ${n.pos[1]}`);
-			// });
-			// console.log("____________");
 			
 			// Find neighboring walkable nodes
 			let available = this.checkNeighbors(this.currentNode, maze);
-			// console.log(available);
 
+			// For each available neighbor
 			available.forEach((n) => {
 
 				// Check if n is in closedList
 				let isInClosedList = this.checkList(n,this.closedList);
 				if (isInClosedList) {
-					// console.log("!!!!");
-					// console.log("SKIPPED ");
-					// console.log(n);
-					// console.log("!!!!");
+					// SKIP
 					return;
 				}
 				
@@ -342,10 +461,6 @@ class MazeSolver_AStar {
 				let isInOpenList = this.checkList(n,this.openList);
 				if (!isInOpenList) {
 					this.openList.push(n);
-					// console.log("!!!!");
-					// console.log("ADDED ");
-					// console.log(n);
-					// console.log("!!!!");
 				} else if (tempGScore >= n.gScore) {
 					return;
 				}
@@ -367,10 +482,8 @@ class MazeSolver_AStar {
 		if (node.posY - 1 >= 0) {
 			if (maze.cells[node.posY - 1][node.posX].wallVisibility[2] == false) {
 				//top
-				// console.log(maze.cells[node.posY - 1][node.posX]);
 				let wNode = new AStar_Node(node.posX,node.posY - 1);
 				walkableNodes.push(wNode);
-				// walkableNodes.push(maze.cells[node.posY - 1][node.posX]);
 			}
 		}
 		
@@ -378,30 +491,24 @@ class MazeSolver_AStar {
 		if (node.posX + 1 < maze.numCellsX) {
 			if (maze.cells[node.posY][node.posX + 1].wallVisibility[3] == false) {
 				//right
-				// console.log(maze.cells[node.posY][node.posX + 1]);
 				let wNode = new AStar_Node(node.posX + 1, node.posY);
 				walkableNodes.push(wNode);
-				// walkableNodes.push(maze.cells[node.posY][node.posX + 1]);
 			}
 		}
 		// bottom
 		if (node.posY + 1 < maze.numCellsY) {
 			if (maze.cells[node.posY + 1][node.posX].wallVisibility[0] == false) {
 				//bottom
-				// console.log(maze.cells[node.posY + 1][node.posX]);
 				let wNode = new AStar_Node(node.posX,node.posY + 1);
 				walkableNodes.push(wNode);
-				// walkableNodes.push(maze.cells[node.posY + 1][node.posX]);
 			}
 		}
 		// left
 		if (node.posX - 1 >= 0) {
 			if (maze.cells[node.posY][node.posX - 1].wallVisibility[1] == false) {
 				//left
-				// console.log(maze.cells[node.posY][node.posX - 1]);
 				let wNode = new AStar_Node(node.posX - 1,node.posY);
 				walkableNodes.push(wNode);
-				// walkableNodes.push(maze.cells[node.posY][node.posX - 1]);
 			}
 		}
 
@@ -427,7 +534,6 @@ class AStar_Node {
 
 	display() {
 		stroke(this.color);
-		// noFill();
 		fill(this.color);
 		rect((this.posX * cellWidth) + cellWidth / 4,(this.posY * cellHeight) + cellHeight / 4, cellWidth / 2, cellHeight / 2);
 	}
@@ -438,6 +544,7 @@ function setup() {
 	canvas.parent("sketch-container1");
 	mazeSizeWidth = 600;
 	mazeSizeHeight = 600;
+	
 	
 	MyMaze = new Maze(mazeSizeWidth,mazeSizeHeight);
 	Builder = new MazeBuilder(MyMaze.cells);
@@ -452,17 +559,17 @@ function setup() {
 	startNode.hScore = Solver_AStar.calcHScore(startNode);
 	startNode.fScore = Solver_AStar.calcFScore(startNode);
 
+	SAgent = new SimpleAgent(startNode.posX,startNode.posY);
+
 	const buildBtn = document.getElementById("buildButton");
 	buildBtn.addEventListener("click", () => {
 		if (!Solver_AStar.isSolving) {
 			Builder.isBuilding = !Builder.isBuilding;
 		}
-		// Builder.build();
 	});
 
 	const solveBtn = document.getElementById("solveButton");
 	solveBtn.addEventListener("click", () => {
-		// Solver_AStar.solve(MyMaze);
 		if (!Builder.isBuilding) {
 			if (Builder.cellStack.length > 0) {
 				Solver_AStar.isSolving = !Solver_AStar.isSolving;
@@ -485,7 +592,17 @@ function setup() {
 		// Calculate startNode h and f scores
 		startNode.hScore = Solver_AStar.calcHScore(startNode);
 		startNode.fScore = Solver_AStar.calcFScore(startNode);
+
+		SAgent = new SimpleAgent(startNode.posX,startNode.posY);
 	});
+
+	// enable when finished
+	// const agentBtn = document.getElementById("sAgentButton");
+
+	// agentBtn.addEventListener("click", () => {
+	// 	SAgent.checkWalls(MyMaze.cells[SAgent.posY][SAgent.posX]);
+	// 	SAgent.move();
+	// });
 	
 	sliderMazeWidth = document.getElementById("mazeWidth");
 	sliderMazeHeight = document.getElementById("mazeHeight");
@@ -499,12 +616,10 @@ function setup() {
 	sliderMazeHeight.setAttribute("value",mazeSizeHeight);
 
 	sliderMazeWidth.onchange = () => {
-		console.log(sliderMazeWidth.value);
 		mazeSizeWidth = sliderMazeWidth.value;
 		sliderMWDisplay.innerHTML = sliderMazeWidth.value;
 	};
 	sliderMazeHeight.onchange = () => {
-		console.log(sliderMazeHeight.value);
 		mazeSizeHeight = sliderMazeHeight.value;
 		sliderMHDisplay.innerHTML = sliderMazeHeight.value;
 	};
