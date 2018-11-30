@@ -6,6 +6,8 @@ let startNode;
 let endNode;
 let cellWidth;
 let cellHeight;
+let mazeSizeWidth;
+let mazeSizeHeight;
 
 class Maze {
 	constructor(width,height) {
@@ -208,7 +210,7 @@ class MazeSolver_AStar {
 	constructor(start,goal) {
 		this.start = start;
 		this.goal = goal;
-		this.openList = [];
+		this.openList = [start];
 		this.closedList = [];
 		this.path = [];
 		this.currentNode = start;
@@ -233,77 +235,133 @@ class MazeSolver_AStar {
 		return node.gScore + node.hScore;
 	}
 
+	compareNodes(n1,n2) {
+		if (n1.posX === n2.posX && n1.posY === n2.posY) {
+			// nodes at same location
+			return true;
+		}
+		// if nodes not at same location
+		return false;
+	}
+
+	checkList(n, thisList) {
+		for (let i = 0; i < thisList.length; i++) {
+			if(n.posX === thisList[i].posX && n.posY === thisList[i].posY) {
+				// n is in list
+				return true;
+			}
+		}
+		// n is not in list
+		return false;
+	}
+
+	constructPath(cNode) {
+		let tempNode = cNode;
+		this.path.push(tempNode);
+
+		while(tempNode.cameFrom) {
+			this.path.push(tempNode.cameFrom);
+			tempNode = tempNode.cameFrom;
+		}
+	}
+
+	showPath() {
+		noFill();
+		stroke(color(0,250,0));
+		beginShape();
+		for (let i = 0; i < this.path.length; i++) {
+			vertex(this.path[i].posX * cellWidth + cellWidth / 2, this.path[i].posY * cellHeight + cellHeight / 2);
+		}
+		endShape();
+	}
+
 	solve(maze) {
 		// while openlist is not empty
 		if (this.openList.length <= 0) {
 			this.isSolving = false;
 		}
-		let lowestFNode = 0;
 
+		let lowestFNode = 0;
 		for (let i = 0; i < this.openList.length; i++) {
 			if (this.openList[i].fScore < this.openList[lowestFNode].fScore) {
 				lowestFNode = i;
 			}
 		}
+		
 		this.currentNode = this.openList[lowestFNode];
 
-		if (this.currentNode === endNode) {
+		// Check if currentNode is the goal
+		let isCurrentTheGoal = this.compareNodes(this.currentNode,endNode);
+		if (isCurrentTheGoal) {
 			// PATH FOUND
 			this.isSolving = false;
+			this.constructPath(this.currentNode);
+			// RETURN PATH
+			return;
 		} else {
-			// Helper.removeFromArray(this.openList,this.currentNode);
-			this.openList.splice(lowestFNode,1);
+			Helper.removeFromArray(this.openList,this.currentNode);
+			// this.openList.splice(lowestFNode,1);
 			this.closedList.push(this.currentNode);
+
+			// console.log("OPEN LIST:");
+			// console.log("____________");
+			// console.log(this.openList);
+			// this.openList.forEach((n) =>{
+			// 	console.log(`${n.pos[0]} , ${n.pos[1]}`);
+			// });
+			// console.log("____________");
+			// console.log("- - - - - - ");
+
+			// console.log("CLOSED LIST:");
+			// console.log("____________");
+			// console.log(this.closedList);
+			// this.closedList.forEach((n) =>{
+			// 	console.log(`${n.pos[0]} , ${n.pos[1]}`);
+			// });
+			// console.log("____________");
 			
 			// Find neighboring walkable nodes
 			let available = this.checkNeighbors(this.currentNode, maze);
+			// console.log(available);
 
-			for (let i = 0; i < available.length; i++) {
-				let n = available[i];
-				if (!this.closedList.includes(n)) {
-					let tempGScore = this.currentNode.gScore + 1;
-					let nPath = false;
-					if (this.openList.includes(n)) {
-						if (tempGScore < n.gScore) {
-							n.gScore = tempGScore;
-							nPath = true;
-						}
-					} else {
-						n.gScore = tempGScore;
-						nPath = true;
-						this.openList.push(n);
-					}
-					if (nPath) {
-						n.hScore = this.calcHScore(n);
-						n.fScore = this.calcFScore(n);
-						n.cameFrom = this.currentNode;
-					}
+			available.forEach((n) => {
+
+				// Check if n is in closedList
+				let isInClosedList = this.checkList(n,this.closedList);
+				if (isInClosedList) {
+					// console.log("!!!!");
+					// console.log("SKIPPED ");
+					// console.log(n);
+					// console.log("!!!!");
+					return;
 				}
-			}
+				
+				let tempGScore = n.gScore + this.calcHScore(this.currentNode,n);
 
-			// available.forEach((n) => {
-			// 	if (!this.closedList.includes(n)) {
-			// 		if (!this.openList.includes(n)) {
-			// 			n.gScore = this.calcGScore(n);
-			// 			n.hScore = this.calcHScore(n);
-			// 			n.fScore = this.calcFScore(n);
-			// 			n.cameFrom = this.currentNode;
-			// 			this.openList.push(n);
-			// 		} else {
-
-			// 		}
-			// 	}
-			// });
-
-			console.log("open list:");
-			console.log(this.openList);
-			console.log("closed list:");
-			console.log(this.closedList);
+				// Check if n is NOT in openList
+				let isInOpenList = this.checkList(n,this.openList);
+				if (!isInOpenList) {
+					this.openList.push(n);
+					// console.log("!!!!");
+					// console.log("ADDED ");
+					// console.log(n);
+					// console.log("!!!!");
+				} else if (tempGScore >= n.gScore) {
+					return;
+				}
+				
+				n.cameFrom = this.currentNode;
+				n.gScore = tempGScore;
+				n.fScore = n.gScore + this.calcHScore(n,endNode);	
+			});
 		}
 	}
 
 	checkNeighbors(node,maze) {
 		let walkableNodes = [];
+		if (node.posY) {
+			
+		}
 
 		// top
 		if (node.posY - 1 >= 0) {
@@ -317,7 +375,7 @@ class MazeSolver_AStar {
 		}
 		
 		// right
-		if (node.posX + 1 < maze.cells[node.posX].length) {
+		if (node.posX + 1 < maze.numCellsX) {
 			if (maze.cells[node.posY][node.posX + 1].wallVisibility[3] == false) {
 				//right
 				// console.log(maze.cells[node.posY][node.posX + 1]);
@@ -327,7 +385,7 @@ class MazeSolver_AStar {
 			}
 		}
 		// bottom
-		if (node.posY + 1 < maze.cells.length) {
+		if (node.posY + 1 < maze.numCellsY) {
 			if (maze.cells[node.posY + 1][node.posX].wallVisibility[0] == false) {
 				//bottom
 				// console.log(maze.cells[node.posY + 1][node.posX]);
@@ -359,6 +417,7 @@ class AStar_Node {
 	constructor(x,y) {
 		this.posX = x;
 		this.posY = y;
+		this.pos = [x,y];
 		this.cameFrom = undefined;
 		this.gScore = 0;
 		this.hScore = 0;
@@ -368,15 +427,19 @@ class AStar_Node {
 
 	display() {
 		stroke(this.color);
-		noFill();
+		// noFill();
+		fill(this.color);
 		rect((this.posX * cellWidth) + cellWidth / 4,(this.posY * cellHeight) + cellHeight / 4, cellWidth / 2, cellHeight / 2);
 	}
 }
 
 function setup() {
-	canvas = createCanvas(401, 401);
+	canvas = createCanvas(601, 601);
 	canvas.parent("sketch-container1");
-	MyMaze = new Maze(400,400);
+	mazeSizeWidth = 600;
+	mazeSizeHeight = 600;
+	
+	MyMaze = new Maze(mazeSizeWidth,mazeSizeHeight);
 	Builder = new MazeBuilder(MyMaze.cells);
 	let startIndex = Builder.getCellIndex(MyMaze.cells[0][0]);
 	let endIndex = Builder.getCellIndex(MyMaze.cells[MyMaze.numCellsY - 1][MyMaze.numCellsX - 1]);
@@ -389,26 +452,68 @@ function setup() {
 	startNode.hScore = Solver_AStar.calcHScore(startNode);
 	startNode.fScore = Solver_AStar.calcFScore(startNode);
 
-	Solver_AStar.openList.push(startNode);
-
 	const buildBtn = document.getElementById("buildButton");
 	buildBtn.addEventListener("click", () => {
-		Builder.isBuilding = !Builder.isBuilding;
+		if (!Solver_AStar.isSolving) {
+			Builder.isBuilding = !Builder.isBuilding;
+		}
 		// Builder.build();
 	});
 
 	const solveBtn = document.getElementById("solveButton");
 	solveBtn.addEventListener("click", () => {
 		// Solver_AStar.solve(MyMaze);
-		Solver_AStar.isSolving = !Solver_AStar.isSolving;
+		if (!Builder.isBuilding) {
+			if (Builder.cellStack.length > 0) {
+				Solver_AStar.isSolving = !Solver_AStar.isSolving;
+			}
+		}
 	});
 
+	const resetBtn = document.getElementById("resetButton");
+	resetBtn.addEventListener("click", () => {
+		// \/ Should refactor into function \/
+		MyMaze = new Maze(mazeSizeWidth,mazeSizeHeight);
+		Builder = new MazeBuilder(MyMaze.cells);
+		let startIndex = Builder.getCellIndex(MyMaze.cells[0][0]);
+		let endIndex = Builder.getCellIndex(MyMaze.cells[MyMaze.numCellsY - 1][MyMaze.numCellsX - 1]);
+		
+		startNode = new AStar_Node(startIndex[1],startIndex[0]);
+		endNode = new AStar_Node(endIndex[1],endIndex[0]);
+		Solver_AStar = new MazeSolver_AStar(startNode,endNode);
+
+		// Calculate startNode h and f scores
+		startNode.hScore = Solver_AStar.calcHScore(startNode);
+		startNode.fScore = Solver_AStar.calcFScore(startNode);
+	});
 	
+	sliderMazeWidth = document.getElementById("mazeWidth");
+	sliderMazeHeight = document.getElementById("mazeHeight");
+	sliderMWDisplay = document.getElementById("mazeW");
+	sliderMHDisplay = document.getElementById("mazeH");
+
+	sliderMazeWidth.setAttribute("max",canvas.width);
+	sliderMazeWidth.setAttribute("value",mazeSizeWidth);
+
+	sliderMazeHeight.setAttribute("max",canvas.height);
+	sliderMazeHeight.setAttribute("value",mazeSizeHeight);
+
+	sliderMazeWidth.onchange = () => {
+		console.log(sliderMazeWidth.value);
+		mazeSizeWidth = sliderMazeWidth.value;
+		sliderMWDisplay.innerHTML = sliderMazeWidth.value;
+	};
+	sliderMazeHeight.onchange = () => {
+		console.log(sliderMazeHeight.value);
+		mazeSizeHeight = sliderMazeHeight.value;
+		sliderMHDisplay.innerHTML = sliderMazeHeight.value;
+	};
+
+
 }
 
 function draw() {
 	background(color(10,10,10));
-	
 
 	//display start and goal
 	startNode.color = color(150,150,150);
@@ -422,14 +527,11 @@ function draw() {
 			MyMaze.cells[i][j].display(j,i);
 		}
 	}
-
+	
 	// Build Button Triggers Building Animation
 	if (Builder.isBuilding) {
+		setFrameRate(100);
 		Builder.build();
-	}
-
-	if (Solver_AStar.isSolving) {
-		Solver_AStar.solve(MyMaze);
 	}
 
 	if(Solver_AStar.openList.length > 0) {
@@ -444,9 +546,16 @@ function draw() {
 			n.display();
 		});
 	}
+
+	if (Solver_AStar.isSolving) {
+		setFrameRate(15);
+		Solver_AStar.solve(MyMaze);
+		Solver_AStar.currentNode.color = color(0,250,0);
+		Solver_AStar.currentNode.display();
+	}
+
+	if(Solver_AStar.path.length > 0) {
+		Solver_AStar.showPath();
+	}
 	
 }
-
-// function windowResized() {
-// 	resizeCanvas(windowWidth,400);
-// }
