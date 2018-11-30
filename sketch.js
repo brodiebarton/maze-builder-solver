@@ -338,7 +338,7 @@ class MazeBuilder {
 				this.currentCell = backTrackCell;
 			}
 		}
-
+		// Stops building when no unvisited cells
 		if (MyMaze.numVisited == MyMaze.totalCells) {
 			this.isBuilding = false;
 		}
@@ -420,7 +420,7 @@ class MazeSolver_AStar {
 			this.isSolving = false;
 		}
 
-		// Chose nod with lowesy f score
+		// Chose node with lowest f score
 		let lowestFNode = 0;
 		for (let i = 0; i < this.openList.length; i++) {
 			if (this.openList[i].fScore < this.openList[lowestFNode].fScore) {
