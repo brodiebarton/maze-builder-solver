@@ -1,3 +1,4 @@
 # IGNORE
 /node_modules
 *.swp
+.eslintrc.json
