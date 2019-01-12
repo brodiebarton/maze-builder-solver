@@ -3,3 +3,5 @@
 
 Final project for CS4242 Artificial Intelligence.
 Maze solver with A* algorithm.
+
+![Demo gif](screenshots/maze_demo.gif)
