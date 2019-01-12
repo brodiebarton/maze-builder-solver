@@ -1,7 +1,5 @@
-# ai-final-project
-##CS4242 Fall 2018 Final Project.
+# maze-builder-solver
 
-Final project for CS4242 Artificial Intelligence.
-Maze solver with A* algorithm.
+Maze builder and solver with A* algorithm.
 
 ![Demo gif](screenshots/maze_demo.gif)
