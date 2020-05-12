@@ -101607,7 +101607,6 @@ var MazeBuilder = /*#__PURE__*/function () {
     value: function removeWalls(currentCell, nextCell) {
       var cIndexes = this.getCellIndex(currentCell);
       var nIndexes = this.getCellIndex(nextCell);
-      console.log("currentIndex: ".concat(cIndexes, " | nextIndexes: ").concat(nIndexes));
       var xMove = nIndexes[1] - cIndexes[1];
       var yMove = nIndexes[0] - cIndexes[0];
 
@@ -101638,11 +101637,8 @@ var MazeBuilder = /*#__PURE__*/function () {
       var neighbors = this.currentCell.checkNeighbors(indexes[0], indexes[1], this.mazeCells);
 
       if (neighbors.length > 0) {
-        // console.log(`neighbors length = ${neighbors.length}`);
-        var randIndex = Math.floor(Math.random() * neighbors.length); // console.log(`random index = ${randIndex}`);
-
-        var newPosition = this.getCellIndex(neighbors[randIndex]); // console.log(`newPosition = ${newPosition}`);
-
+        var randIndex = Math.floor(Math.random() * neighbors.length);
+        var newPosition = this.getCellIndex(neighbors[randIndex]);
         this.cellStack.push(this.currentCell); // remove walls
 
         this.removeWalls(this.currentCell, this.mazeCells[newPosition[0]][newPosition[1]]);
@@ -101821,21 +101817,17 @@ var MazeSolver_AStar = /*#__PURE__*/function () {
         this.path.push(tempNode.cameFrom);
         tempNode = tempNode.cameFrom;
       }
-    }
-  }, {
-    key: "showPath",
-    value: function showPath() {
-      console.log("CALL TO MAZESOLVER_ASTAR.SHOWPATH()");
-      noFill();
-      stroke((0, _p.color)(0, 250, 0));
-      beginShape();
+    } // showPath() {
+    // 	console.log("CALL TO MAZESOLVER_ASTAR.SHOWPATH()");
+    // 	noFill();
+    // 	stroke(color(0,250,0));
+    // 	beginShape();
+    // 	for (let i = 0; i < this.path.length; i++) {
+    // 		vertex(this.path[i].posX * cellWidth + cellWidth / 2, this.path[i].posY * cellHeight + cellHeight / 2);
+    // 	}
+    // 	endShape();
+    // }
 
-      for (var i = 0; i < this.path.length; i++) {
-        vertex(this.path[i].posX * cellWidth + cellWidth / 2, this.path[i].posY * cellHeight + cellHeight / 2);
-      }
-
-      endShape();
-    }
   }, {
     key: "solve",
     value: function solve(maze) {
@@ -101944,8 +101936,8 @@ var MazeSolver_AStar = /*#__PURE__*/function () {
         }
       }
 
-      walkableNodes.forEach(function (n) {
-        n.color = (0, _p.color)(200, 200, 200);
+      walkableNodes.map(function (n) {
+        n.color = (100, 100, 100);
       });
       return walkableNodes;
     }
@@ -102085,7 +102077,7 @@ var mySketch = function mySketch(sketch) {
     }
 
     if (Solver_AStar.path.length > 0) {
-      Solver_AStar.showPath();
+      displaySolvePath(Solver_AStar.path);
     }
   }; // Display Node
 
@@ -102136,6 +102128,18 @@ var mySketch = function mySketch(sketch) {
       }
     }
   };
+
+  var displaySolvePath = function displaySolvePath(path) {
+    sketch.noFill();
+    sketch.stroke(sketch.color(0, 250, 0));
+    sketch.beginShape();
+
+    for (var i = 0; i < path.length; i++) {
+      sketch.vertex(path[i].posX * cellWidth + cellWidth / 2, path[i].posY * cellHeight + cellHeight / 2);
+    }
+
+    sketch.endShape();
+  };
 };
 
 var sketch = new _p.default(mySketch);
@@ -102167,7 +102171,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "54914" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "55340" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

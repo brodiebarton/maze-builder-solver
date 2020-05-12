@@ -137,7 +137,7 @@ const mySketch = (sketch) => {
 		}
 
 		if(Solver_AStar.path.length > 0) {
-			Solver_AStar.showPath();
+			displaySolvePath(Solver_AStar.path);
 		}
 	}
 
@@ -195,6 +195,16 @@ const mySketch = (sketch) => {
 
 			}
 		}
+	}
+
+	const displaySolvePath = (path) => {
+		sketch.noFill();
+		sketch.stroke(sketch.color(0,250,0));
+		sketch.beginShape();
+		for (let i = 0; i < path.length; i++) {
+			sketch.vertex(path[i].posX * cellWidth + cellWidth / 2, path[i].posY * cellHeight + cellHeight / 2);
+		}
+		sketch.endShape();
 	}
 		
 }

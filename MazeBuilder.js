@@ -38,8 +38,6 @@ export default class MazeBuilder {
 		let cIndexes = this.getCellIndex(currentCell);
 		let nIndexes = this.getCellIndex(nextCell);
 
-		console.log(`currentIndex: ${cIndexes} | nextIndexes: ${nIndexes}`);
-
 		let xMove = nIndexes[1] - cIndexes[1];
 		let yMove = nIndexes[0] - cIndexes[0];
 
@@ -67,11 +65,8 @@ export default class MazeBuilder {
 		let neighbors = this.currentCell.checkNeighbors(indexes[0], indexes[1],this.mazeCells);
 		
 		if (neighbors.length > 0) {
-			// console.log(`neighbors length = ${neighbors.length}`);
 			let randIndex = Math.floor((Math.random() * neighbors.length));
-			// console.log(`random index = ${randIndex}`);
 			let newPosition = this.getCellIndex(neighbors[randIndex]);
-			// console.log(`newPosition = ${newPosition}`);
 
 			this.cellStack.push(this.currentCell);
 

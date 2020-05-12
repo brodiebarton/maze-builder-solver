@@ -61,16 +61,16 @@ export default class MazeSolver_AStar {
 		}
 	}
 
-	showPath() {
-		console.log("CALL TO MAZESOLVER_ASTAR.SHOWPATH()");
-		noFill();
-		stroke(color(0,250,0));
-		beginShape();
-		for (let i = 0; i < this.path.length; i++) {
-			vertex(this.path[i].posX * cellWidth + cellWidth / 2, this.path[i].posY * cellHeight + cellHeight / 2);
-		}
-		endShape();
-	}
+	// showPath() {
+	// 	console.log("CALL TO MAZESOLVER_ASTAR.SHOWPATH()");
+	// 	noFill();
+	// 	stroke(color(0,250,0));
+	// 	beginShape();
+	// 	for (let i = 0; i < this.path.length; i++) {
+	// 		vertex(this.path[i].posX * cellWidth + cellWidth / 2, this.path[i].posY * cellHeight + cellHeight / 2);
+	// 	}
+	// 	endShape();
+	// }
 
 	solve(maze) {
 		// while openlist is not empty
@@ -169,10 +169,10 @@ export default class MazeSolver_AStar {
 				walkableNodes.push(wNode);
 			}
 		}
-
-		walkableNodes.forEach((n) => {
-			n.color = color(200,200,200);
-		});
+		walkableNodes.map((n) => {
+			n.color = (100,100,100);
+			}
+		);
 
 		return walkableNodes;
 	}
