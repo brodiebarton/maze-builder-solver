@@ -3,27 +3,28 @@
     <head>
         <meta charset="UTF-8">
         <title>Maze-Builder-Solver</title>
-        <link rel="stylesheet" href="style.css">
-		<script src="assets/p5.js"></script>
-		<script src="helper.js"></script>
+		<link rel="stylesheet" href="style.css">
+		<script src="sketch.js" defer></script>
     </head>
     <body>  
-		<div id="sketch-container1">
-			<script src="sketch.js"></script>
-		</div>
-		<div id="ui">
-			<button id="buildButton" class="buttonStyle">BUILD</button>
-			<button id="solveButton" class="buttonStyle">SOLVE</button>
-			<!-- <button id="sAgentButton" class="buttonStyle">S AGENT</button> -->
-			<button id="resetButton" class="buttonStyle">RESET</button>
-			<br>
-			<label for="mazeWidth">Set Maze Width:</label>
-			<input name="mazeSize" id="mazeWidth" class="slider" type="range" min="1">
-			<span id="mazeW"></span>
-			<br>
-			<label for="mazeHeight">Set Maze Height:</label>
-			<input name="mazeSize" id="mazeHeight" class="slider" type="range" min="1">
-			<span id="mazeH"></span>
+		<div class="flex-container-col">
+			<div id="sketchContainer"></div>
+			<div class="flex-container-row">
+				<div id="ui">
+					<button id="buildButton" class="buttonStyle">BUILD</button>
+					<button id="solveButton" class="buttonStyle">SOLVE</button>
+					<!-- <button id="sAgentButton" class="buttonStyle">S AGENT</button> -->
+					<button id="resetButton" class="buttonStyle">RESET</button>
+					<br>
+					<label for="mazeWidth">Set Maze Width:</label>
+					<input name="mazeSize" id="mazeWidth" class="slider" type="range" min="1">
+					<span id="mazeW"></span>
+					<br>
+					<label for="mazeHeight">Set Maze Height:</label>
+					<input name="mazeSize" id="mazeHeight" class="slider" type="range" min="1">
+					<span id="mazeH"></span>
+				</div>
+			</div>
 		</div>
     </body>
 </html>

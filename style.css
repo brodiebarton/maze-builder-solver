@@ -1,16 +1,26 @@
 body {
 	background-color:rgb(54, 54, 54);
-	display: flex;
-	flex-direction: column;
 	user-select: none;
 }
 
-#sketch-container1 {
-	margin: 0 auto;
+.flex-container-col {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+}
+
+.flex-container-row {
+	display: flex;
+	flex-direction: row;
+	/* align-items: center; */
+}
+
+#sketchContainer > canvas {
+
 }
 
 #ui {
-	margin: 0 auto;
+
 }
 
 label {

@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "description": "",
   "main": "sketch.js",
-  "dependencies": {},
+  "dependencies": {
+    "p5": "^1.0.0"
+  },
   "devDependencies": {
     "eslint": "^5.9.0",
     "eslint-config-p5js": "^1.0.1"
