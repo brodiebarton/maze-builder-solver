@@ -26,8 +26,6 @@ const mySketch = (sketch) => {
 		startNode.hScore = Solver_AStar.calcHScore(startNode, endNode);
 		startNode.fScore = Solver_AStar.calcFScore(startNode);
 
-		// SAgent = new SimpleAgent(startNode.posX,startNode.posY);
-
 		const buildBtn = document.getElementById("buildButton");
 		buildBtn.addEventListener("click", () => {
 			if (!Solver_AStar.isSolving) {
@@ -46,30 +44,8 @@ const mySketch = (sketch) => {
 
 		const resetBtn = document.getElementById("resetButton");
 		resetBtn.addEventListener("click", () => {
-			sketch.clear();
-			// \/ Should refactor into function \/
-			MyMaze = new Maze(mazeSizeWidth, mazeSizeHeight, cellWidth, cellHeight);
-			Builder = new MazeBuilder(MyMaze);
-			startIndex = Builder.getCellIndex(MyMaze.cells[0][0]);
-			endIndex = Builder.getCellIndex(MyMaze.cells[MyMaze.numCellsY - 1][MyMaze.numCellsX - 1]);
-			startNode = new AStar_Node(startIndex[1],startIndex[0]);
-			endNode = new AStar_Node(endIndex[1],endIndex[0]);
-			Solver_AStar = new MazeSolver_AStar(startNode,endNode);
-
-			// Calculate startNode h and f scores
-			startNode.hScore = Solver_AStar.calcHScore(startNode, endNode);
-			startNode.fScore = Solver_AStar.calcFScore(startNode);
-
-			// SAgent = new SimpleAgent(startNode.posX,startNode.posY);
+			resetMaze();
 		});
-
-		// enable when finished
-		// const agentBtn = document.getElementById("sAgentButton");
-
-		// agentBtn.addEventListener("click", () => {
-		// 	SAgent.checkWalls(MyMaze.cells[SAgent.posY][SAgent.posX]);
-		// 	SAgent.move();
-		// });
 		
 		let sliderMazeWidth = document.getElementById("mazeWidth");
 		let sliderMazeHeight = document.getElementById("mazeHeight");
@@ -84,21 +60,18 @@ const mySketch = (sketch) => {
 
 		sliderMazeWidth.onchange = () => {
 			mazeSizeWidth = sliderMazeWidth.value;
-			sliderMWDisplay.innerHTML = sliderMazeWidth.value;
+			sliderMWDisplay.innerHTML = `${sliderMazeWidth.value} px`;
+			resetMaze();
 		};
 		sliderMazeHeight.onchange = () => {
 			mazeSizeHeight = sliderMazeHeight.value;
-			sliderMHDisplay.innerHTML = sliderMazeHeight.value;
+			sliderMHDisplay.innerHTML = `${sliderMazeHeight.value} px`;
+			resetMaze();
 		};
 	}
 
 	sketch.draw = () => {
 		sketch.clear();
-		// sketch.background(sketch.color(10,10,10));
-
-		// stroke(this.color);
-		// fill(this.color);
-		// rect((this.posX * cellWidth) + cellWidth / 4,(this.posY * cellHeight) + cellHeight / 4, cellWidth / 2, cellHeight / 2);
 
 		// display start and goal
 		startNode.color = sketch.color(150,150,150);
@@ -111,7 +84,6 @@ const mySketch = (sketch) => {
 		
 		// Build Button Triggers Building Animation
 		if (Builder.isBuilding) {
-			// sketch.setFrameRate(100);
 			Builder.build();
 			
 		}
@@ -124,15 +96,12 @@ const mySketch = (sketch) => {
 
 		if(Solver_AStar.closedList.length > 0) {
 			Solver_AStar.closedList.forEach((n) => {
-				// n.color = sketch.color(255,0,0);
 				displayNode(n);
 			});
 		}
 
 		if (Solver_AStar.isSolving) {
-			// sketch.setFrameRate(15);
 			Solver_AStar.solve(MyMaze);
-			// Solver_AStar.currentNode.color = sketch.color(0,200,0);
 			displayNode(Solver_AStar.currentNode);
 		}
 
@@ -163,8 +132,6 @@ const mySketch = (sketch) => {
 
 				// top
 				if (currentCell.wallVisibility[0]) {
-					// currentCell.walls[0] = sketch.line(lx,ly,lx + currentCell.width, ly);
-					// sketch.line(lx,ly,lx + currentCell.width, ly);
 					currentCell.walls[0] = sketch.line(lengthX, lengthY, lengthX + currentCell.width, lengthY);
 				}
 		
@@ -205,6 +172,21 @@ const mySketch = (sketch) => {
 			sketch.vertex(path[i].posX * cellWidth + cellWidth / 2, path[i].posY * cellHeight + cellHeight / 2);
 		}
 		sketch.endShape();
+	}
+
+	const resetMaze = () => {
+		sketch.clear();
+		MyMaze = new Maze(mazeSizeWidth, mazeSizeHeight, cellWidth, cellHeight);
+		Builder = new MazeBuilder(MyMaze);
+		startIndex = Builder.getCellIndex(MyMaze.cells[0][0]);
+		endIndex = Builder.getCellIndex(MyMaze.cells[MyMaze.numCellsY - 1][MyMaze.numCellsX - 1]);
+		startNode = new AStar_Node(startIndex[1],startIndex[0]);
+		endNode = new AStar_Node(endIndex[1],endIndex[0]);
+		Solver_AStar = new MazeSolver_AStar(startNode,endNode);
+
+		// Calculate startNode h and f scores
+		startNode.hScore = Solver_AStar.calcHScore(startNode, endNode);
+		startNode.fScore = Solver_AStar.calcFScore(startNode);
 	}
 		
 }
