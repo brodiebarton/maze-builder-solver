@@ -60,12 +60,12 @@ const mySketch = (sketch) => {
 
 		sliderMazeWidth.onchange = () => {
 			mazeSizeWidth = sliderMazeWidth.value;
-			sliderMWDisplay.innerHTML = `${sliderMazeWidth.value} px`;
+			sliderMWDisplay.innerHTML = `${sliderMazeWidth.value / 40} Columns`;
 			resetMaze();
 		};
 		sliderMazeHeight.onchange = () => {
 			mazeSizeHeight = sliderMazeHeight.value;
-			sliderMHDisplay.innerHTML = `${sliderMazeHeight.value} px`;
+			sliderMHDisplay.innerHTML = `${sliderMazeHeight.value / 40} Rows`;
 			resetMaze();
 		};
 	}
