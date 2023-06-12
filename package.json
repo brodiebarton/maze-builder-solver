@@ -7,7 +7,7 @@
     "p5": "^1.6.0"
   },
   "devDependencies": {
-    "cssnano": "^6.0.1",
+    "cssnano": "^4.1.11",
     "eslint": "^8.42.0",
     "eslint-config-p5js": "^1.1.0",
     "parcel-bundler": "^1.8.1"
