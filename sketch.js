@@ -3,6 +3,7 @@ import Maze from './Maze.js';
 import MazeBuilder from './MazeBuilder.js';
 import MazeSolver_AStar from './MazeSolver_AStar.js';
 import AStar_Node from './AStar_Node.js';
+import Player from './Player.js';
 
 
 const mySketch = (sketch) => {
@@ -14,12 +15,27 @@ const mySketch = (sketch) => {
 	let Builder = new MazeBuilder(MyMaze);
 	let startIndex = Builder.getCellIndex(MyMaze.cells[0][0]);
 	let endIndex = Builder.getCellIndex(MyMaze.cells[MyMaze.numCellsY - 1][MyMaze.numCellsX - 1]);
-	let startNode = new AStar_Node(startIndex[1],startIndex[0]);
-	let endNode = new AStar_Node(endIndex[1],endIndex[0]);
-	let Solver_AStar = new MazeSolver_AStar(startNode,endNode);
+	let startNode = new AStar_Node(startIndex[1], startIndex[0]);
+	let endNode = new AStar_Node(endIndex[1], endIndex[0]);
+	let Solver_AStar = new MazeSolver_AStar(startNode, endNode);
+	let player = new Player(startNode.posX, startNode.posY);
+	let isPlayable = false;
+	let hasWon = false;
+
+	const updatePlayStatus = () => {
+		const playStatus = document.getElementById("playStatus");
+		if (!playStatus) return;
+		if (hasWon) {
+			playStatus.textContent = "You win!";
+		} else if (isPlayable && !Builder.isBuilding) {
+			playStatus.textContent = "Use arrow keys to play";
+		} else {
+			playStatus.textContent = "";
+		}
+	};
 
 	sketch.setup = () => {
-		let canvas = sketch.createCanvas(mazeSizeWidth , mazeSizeHeight);
+		let canvas = sketch.createCanvas(mazeSizeWidth, mazeSizeHeight);
 		canvas.parent("sketchContainer");
 
 		// Calculate startNode h and f scores
@@ -29,7 +45,14 @@ const mySketch = (sketch) => {
 		const buildBtn = document.getElementById("buildButton");
 		buildBtn.addEventListener("click", () => {
 			if (!Solver_AStar.isSolving) {
+				const wasBuilding = Builder.isBuilding;
 				Builder.isBuilding = !Builder.isBuilding;
+				if (Builder.isBuilding && !wasBuilding) {
+					isPlayable = false;
+					hasWon = false;
+					player.reset(startNode);
+					updatePlayStatus();
+				}
 			}
 		});
 
@@ -46,7 +69,7 @@ const mySketch = (sketch) => {
 		resetBtn.addEventListener("click", () => {
 			resetMaze();
 		});
-		
+
 		let sliderMazeWidth = document.getElementById("mazeWidth");
 		let sliderMazeHeight = document.getElementById("mazeHeight");
 		let sliderMWDisplay = document.getElementById("mazeW");
@@ -75,27 +98,27 @@ const mySketch = (sketch) => {
 		sketch.clear();
 
 		// display start and goal
-		startNode.color = sketch.color(150,150,150);
+		startNode.color = sketch.color(150, 150, 150);
 		displayNode(startNode);
-		endNode.color = sketch.color(0,200,0);
+		endNode.color = sketch.color(0, 200, 0);
 		displayNode(endNode);
 
 		// display maze
 		displayMaze(MyMaze);
-		
+
 		// Build Button Triggers Building Animation
 		if (Builder.isBuilding) {
 			Builder.build();
-			
+
 		}
 
-		if(Solver_AStar.openList.length > 0) {
+		if (Solver_AStar.openList.length > 0) {
 			Solver_AStar.openList.forEach((n) => {
 				displayNode(n);
 			});
 		}
 
-		if(Solver_AStar.closedList.length > 0) {
+		if (Solver_AStar.closedList.length > 0) {
 			Solver_AStar.closedList.forEach((n) => {
 				displayNode(n);
 			});
@@ -106,10 +129,41 @@ const mySketch = (sketch) => {
 			displayNode(Solver_AStar.currentNode);
 		}
 
-		if(Solver_AStar.path.length > 0) {
+		if (Solver_AStar.path.length > 0) {
 			displaySolvePath(Solver_AStar.path);
 		}
+
+		if (!Builder.isBuilding && MyMaze.numVisited === MyMaze.totalCells) {
+			if (!isPlayable) {
+				isPlayable = true;
+				updatePlayStatus();
+			}
+		}
+
+		if (isPlayable) {
+			player.display(sketch, cellWidth, cellHeight);
+		}
 	}
+
+	sketch.keyPressed = () => {
+		if (!isPlayable || Builder.isBuilding || hasWon) return;
+
+		let moved = false;
+		if (sketch.keyCode === 38) {
+			moved = player.move(MyMaze, -1, 0);
+		} else if (sketch.keyCode === 39) {
+			moved = player.move(MyMaze, 0, 1);
+		} else if (sketch.keyCode === 40) {
+			moved = player.move(MyMaze, 1, 0);
+		} else if (sketch.keyCode === 37) {
+			moved = player.move(MyMaze, 0, -1);
+		}
+
+		if (moved && player.hasReachedGoal(endNode)) {
+			hasWon = true;
+			updatePlayStatus();
+		}
+	};
 
 	// Display Node
 	const displayNode = (node) => {
@@ -128,42 +182,42 @@ const mySketch = (sketch) => {
 			for (let j = 0; j < maze.cells[i].length; j++) {
 				let currentCell = maze.cells[i][j];
 
-				
-				let lengthX = currentCell.posX ;
-				let lengthY = currentCell.posY ;
-			
+
+				let lengthX = currentCell.posX;
+				let lengthY = currentCell.posY;
+
 				sketch.stroke('rgb(200,0,100)');
-				
+
 
 				// top
 				if (currentCell.wallVisibility[0]) {
 					currentCell.walls[0] = sketch.line(lengthX, lengthY, lengthX + currentCell.width, lengthY);
 				}
-		
+
 				// right
 				if (currentCell.wallVisibility[1]) {
 					currentCell.walls[1] = sketch.line(lengthX + currentCell.width, lengthY, lengthX + currentCell.width, lengthY + currentCell.height);
 				}
-		
+
 				// bottom
 				if (currentCell.wallVisibility[2]) {
 					currentCell.walls[2] = sketch.line(lengthX + currentCell.width, lengthY + currentCell.height, lengthX, lengthY + currentCell.height);
 				}
-		
+
 				// left
 				if (currentCell.wallVisibility[3]) {
 					currentCell.walls[3] = sketch.line(lengthX, lengthY + currentCell.height, lengthX, lengthY);
 				}
-				
+
 				if (Builder.isBuilding) {
 					if (currentCell.isVisited) {
 						sketch.noStroke();
 						sketch.fill('rgb(0,100,100)');
 						const rectPadding = 8;
-						sketch.rect(currentCell.posX + rectPadding , currentCell.posY + rectPadding , currentCell.width - rectPadding * 2 , currentCell.height - rectPadding * 2 );
+						sketch.rect(currentCell.posX + rectPadding, currentCell.posY + rectPadding, currentCell.width - rectPadding * 2, currentCell.height - rectPadding * 2);
 					}
 				}
-				
+
 
 			}
 		}
@@ -171,7 +225,7 @@ const mySketch = (sketch) => {
 
 	const displaySolvePath = (path) => {
 		sketch.noFill();
-		sketch.stroke(sketch.color(0,250,0));
+		sketch.stroke(sketch.color(0, 250, 0));
 		sketch.beginShape();
 		for (let i = 0; i < path.length; i++) {
 			sketch.vertex(path[i].posX * cellWidth + cellWidth / 2, path[i].posY * cellHeight + cellHeight / 2);
@@ -185,15 +239,20 @@ const mySketch = (sketch) => {
 		Builder = new MazeBuilder(MyMaze);
 		startIndex = Builder.getCellIndex(MyMaze.cells[0][0]);
 		endIndex = Builder.getCellIndex(MyMaze.cells[MyMaze.numCellsY - 1][MyMaze.numCellsX - 1]);
-		startNode = new AStar_Node(startIndex[1],startIndex[0]);
-		endNode = new AStar_Node(endIndex[1],endIndex[0]);
-		Solver_AStar = new MazeSolver_AStar(startNode,endNode);
+		startNode = new AStar_Node(startIndex[1], startIndex[0]);
+		endNode = new AStar_Node(endIndex[1], endIndex[0]);
+		Solver_AStar = new MazeSolver_AStar(startNode, endNode);
+
+		player = new Player(startNode.posX, startNode.posY);
+		isPlayable = false;
+		hasWon = false;
+		updatePlayStatus();
 
 		// Calculate startNode h and f scores
 		startNode.hScore = Solver_AStar.calcHScore(startNode, endNode);
 		startNode.fScore = Solver_AStar.calcFScore(startNode);
 	}
-		
+
 }
 
 const sketch = new p5(mySketch);
