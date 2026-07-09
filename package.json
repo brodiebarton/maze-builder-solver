@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "Maze builder and solver with A* algorithm",
   "type": "module",
+  "engines": {
+    "node": ">=24.0.0"
+  },
   "dependencies": {
     "p5": "^2.3.0"
   },
