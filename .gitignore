@@ -1,6 +1,23 @@
-# IGNORE
-/node_modules
+# Dependencies
+node_modules
+
+# Build output
+dist
+dist-ssr
+
+# Vite
+.vite
+.cache
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS / editor
+.DS_Store
 *.swp
-.eslintrc.json
-/.cache
-/dist
