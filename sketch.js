@@ -1,8 +1,8 @@
 import p5 from 'p5';
-import Maze from './Maze';
-import MazeBuilder from './MazeBuilder';
-import MazeSolver_AStar from './MazeSolver_AStar';
-import AStar_Node from './AStar_Node';
+import Maze from './Maze.js';
+import MazeBuilder from './MazeBuilder.js';
+import MazeSolver_AStar from './MazeSolver_AStar.js';
+import AStar_Node from './AStar_Node.js';
 
 
 const mySketch = (sketch) => {
@@ -54,9 +54,10 @@ const mySketch = (sketch) => {
 
 		sliderMazeWidth.setAttribute("max", canvas.width);
 		sliderMazeWidth.setAttribute("value", mazeSizeWidth);
-
 		sliderMazeHeight.setAttribute("max", canvas.height);
 		sliderMazeHeight.setAttribute("value", mazeSizeHeight);
+		sliderMWDisplay.innerHTML = `${mazeSizeWidth / 40} Columns`;
+		sliderMHDisplay.innerHTML = `${mazeSizeHeight / 40} Rows`;
 
 		sliderMazeWidth.onchange = () => {
 			mazeSizeWidth = sliderMazeWidth.value;
@@ -112,8 +113,12 @@ const mySketch = (sketch) => {
 
 	// Display Node
 	const displayNode = (node) => {
-		sketch.stroke(node.color);
-		sketch.fill(node.color);
+		if (!node.color) return;
+		const c = Array.isArray(node.color)
+			? sketch.color(node.color[0], node.color[1], node.color[2])
+			: node.color;
+		sketch.stroke(c);
+		sketch.fill(c);
 		sketch.rect((node.posX * cellWidth) + cellWidth / 4, (node.posY * cellHeight) + cellHeight / 4, cellWidth / 2, cellHeight / 2);
 	}
 

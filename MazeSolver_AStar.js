@@ -1,6 +1,5 @@
-import Helper from './Helper';
-import AStar_Node from './AStar_Node';
-import {color} from 'p5';
+import Helper from './Helper.js';
+import AStar_Node from './AStar_Node.js';
 
 export default class MazeSolver_AStar {
 	constructor(start, goal) {
@@ -113,7 +112,7 @@ export default class MazeSolver_AStar {
 					return;
 				}
 				
-				let tempGScore = n.gScore + this.calcHScore(this.currentNode,n);
+				let tempGScore = this.currentNode.gScore + 1;
 
 				// Check if n is NOT in openList
 				let isInOpenList = this.checkList(n,this.openList);
@@ -169,10 +168,9 @@ export default class MazeSolver_AStar {
 				walkableNodes.push(wNode);
 			}
 		}
-		walkableNodes.map((n) => {
-			n.color = (100,100,100);
-			}
-		);
+		walkableNodes.forEach((n) => {
+			n.color = [100, 100, 100];
+		});
 
 		return walkableNodes;
 	}

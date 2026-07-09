@@ -1,22 +1,18 @@
 {
-  "name": "maze_builder_solver",
+  "name": "maze-builder-solver",
   "version": "1.0.0",
-  "description": "",
-  "main": "sketch.js",
+  "description": "Maze builder and solver with A* algorithm",
+  "type": "module",
   "dependencies": {
-    "p5": "^1.6.0"
+    "p5": "^2.3.0"
   },
   "devDependencies": {
-    "cssnano": "^4.1.11",
-    "eslint": "^8.42.0",
-    "eslint-config-p5js": "^1.1.0",
-    "parcel-bundler": "^1.8.1"
+    "vite": "^8.1.1"
   },
   "scripts": {
-    "dev": "parcel index.html",
-    "build": "parcel build index.html",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
   },
-  "author": "",
   "license": "ISC"
 }
