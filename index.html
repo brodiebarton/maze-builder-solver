@@ -1,20 +1,25 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
     <head>
         <meta charset="UTF-8">
-        <title>Maze-Builder-Solver</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Maze Builder Solver</title>
+		<link rel="preconnect" href="https://fonts.googleapis.com">
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+		<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
 		<script type="module" src="/sketch.js"></script>
 		<link rel="stylesheet" href="style.css">
 		<style>
 			#app { display: none; }
-			html.js-enabled #app { display: block; }
+			html.js-enabled #app { display: flex; }
 			.noscript-message {
 				color: rgb(218, 218, 218);
-				font-family: sans-serif;
+				font-family: "Space Grotesk", sans-serif;
 				text-align: center;
 				padding: 2em;
 				max-width: 32em;
 				margin: 2em auto;
+				line-height: 1.5;
 			}
 		</style>
 		<script>
@@ -25,35 +30,52 @@
 		<noscript>
 			<p class="noscript-message">JavaScript is required to use Maze Builder Solver. Please enable JavaScript in your browser and reload this page.</p>
 		</noscript>
-		<div id="app" class="flex-container-col">
-			<div id="sketchContainer" tabindex="0"></div>
-			<div class="flex-container-row">
-				<div id="ui">
+		<div id="app" class="app-shell">
+			<header class="app-header">
+				<h1>Maze Builder Solver</h1>
+				<p class="tagline">Build a maze, race the clock, or challenge the AI.</p>
+			</header>
+			<div id="sketchContainer" tabindex="0" aria-label="Maze canvas"></div>
+			<div id="ui" class="control-panel">
+				<section class="control-group actions" aria-label="Maze actions">
 					<button id="buildButton" class="buttonStyle">BUILD</button>
 					<button id="solveButton" class="buttonStyle">SOLVE</button>
-					<!-- <button id="sAgentButton" class="buttonStyle">S AGENT</button> -->
 					<button id="resetButton" class="buttonStyle">RESET</button>
+				</section>
+
+				<section class="control-group status" aria-label="Play status">
 					<p id="playStatus"></p>
-					<p id="playerTimer" class="timerDisplay">Player: 0.00s</p>
-					<p id="solverTimer" class="timerDisplay">Solver: 0.00s</p>
-					<p id="moveCount" class="timerDisplay">Moves: 0</p>
-					<br>
-					<label class="raceOption">
-						<input type="checkbox" id="raceToggle">
-						Race AI opponent
-					</label>
-					<label for="difficultySelect">Difficulty:</label>
-					<select id="difficultySelect" disabled>
-						<option value="easy">Easy</option>
-						<option value="medium" selected>Medium</option>
-						<option value="hard">Hard</option>
-						<option value="extreme">Extreme</option>
-					</select>
-					<br>
-					<label for="mazeSize">Set Maze Size:</label>
-					<input name="mazeSize" id="mazeSize" class="slider" type="range" step="1">
-					<span id="mazeSizeDisplay"></span>
-				</div>
+					<div class="stat-row">
+						<p id="playerTimer" class="timerDisplay">Player: 0.00s</p>
+						<p id="solverTimer" class="timerDisplay">Solver: 0.00s</p>
+						<p id="moveCount" class="timerDisplay">Moves: 0</p>
+					</div>
+					<div class="legend" aria-hidden="true">
+						<span class="legend-item player"><i></i> Player</span>
+						<span class="legend-item agent"><i></i> AI</span>
+					</div>
+				</section>
+
+				<section class="control-group settings" aria-label="Race and size settings">
+					<div class="setting-row">
+						<label class="raceOption" for="raceToggle">
+							<input type="checkbox" id="raceToggle">
+							Race AI opponent
+						</label>
+						<label class="difficultyLabel" for="difficultySelect">Difficulty</label>
+						<select id="difficultySelect" disabled>
+							<option value="easy">Easy</option>
+							<option value="medium" selected>Medium</option>
+							<option value="hard">Hard</option>
+							<option value="extreme">Extreme</option>
+						</select>
+					</div>
+					<div class="setting-row size-row">
+						<label for="mazeSize">Maze size</label>
+						<input name="mazeSize" id="mazeSize" class="slider" type="range" step="1">
+						<span id="mazeSizeDisplay"></span>
+					</div>
+				</section>
 			</div>
 		</div>
     </body>

@@ -11,7 +11,7 @@ const mySketch = (sketch) => {
 	const cellWidth = 40;
 	const cellHeight = 40;
 	const MIN_CELLS = 2;
-	const UI_RESERVE_PX = 300;
+	const UI_RESERVE_PX = 360;
 	const VIEWPORT_PADDING_PX = 32;
 
 	const getMaxCellsForScreen = () => {
