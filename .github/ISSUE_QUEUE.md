@@ -4,7 +4,7 @@ Ordered backlog for sequential, one-issue-per-agent work. Update status/branch/P
 
 | Order | Issue | Title | Status | Branch | PR |
 |------:|------:|-------|--------|--------|----|
-| 1 | #14 | No Javascript Handling | pending | | |
+| 1 | #14 | No Javascript Handling | in_progress | cursor/issue-14-noscript-94f9 | |
 | 2 | #18 | Allow for larger maze | pending | | |
 | 3 | #15 | Solve Timers | pending | | |
 | 4 | #17 | Track players movement | pending | | |

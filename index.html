@@ -5,9 +5,27 @@
         <title>Maze-Builder-Solver</title>
 		<script type="module" src="/sketch.js"></script>
 		<link rel="stylesheet" href="style.css">
+		<style>
+			#app { display: none; }
+			html.js-enabled #app { display: block; }
+			.noscript-message {
+				color: rgb(218, 218, 218);
+				font-family: sans-serif;
+				text-align: center;
+				padding: 2em;
+				max-width: 32em;
+				margin: 2em auto;
+			}
+		</style>
+		<script>
+			document.documentElement.classList.add("js-enabled");
+		</script>
     </head>
-    <body>  
-		<div class="flex-container-col">
+    <body>
+		<noscript>
+			<p class="noscript-message">JavaScript is required to use Maze Builder Solver. Please enable JavaScript in your browser and reload this page.</p>
+		</noscript>
+		<div id="app" class="flex-container-col">
 			<div id="sketchContainer" tabindex="0"></div>
 			<div class="flex-container-row">
 				<div id="ui">
