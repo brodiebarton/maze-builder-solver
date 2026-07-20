@@ -7,10 +7,23 @@ import Player from './Player.js';
 
 
 const mySketch = (sketch) => {
-	let mazeSizeWidth = 600;
-	let mazeSizeHeight = 600;
 	const cellWidth = 40;
 	const cellHeight = 40;
+	const MIN_CELLS = 2;
+	const UI_RESERVE_PX = 220;
+	const VIEWPORT_PADDING_PX = 32;
+
+	const getMaxCellsForScreen = () => {
+		const maxCols = Math.floor((window.innerWidth - VIEWPORT_PADDING_PX) / cellWidth);
+		const maxRows = Math.floor((window.innerHeight - UI_RESERVE_PX) / cellHeight);
+		return Math.max(MIN_CELLS, Math.min(maxCols, maxRows));
+	};
+
+	let maxCells = getMaxCellsForScreen();
+	let mazeCells = Math.max(MIN_CELLS, Math.floor(maxCells * 0.5));
+	let mazeSizeWidth = mazeCells * cellWidth;
+	let mazeSizeHeight = mazeCells * cellHeight;
+
 	let MyMaze = new Maze(mazeSizeWidth, mazeSizeHeight, cellWidth, cellHeight);
 	let Builder = new MazeBuilder(MyMaze);
 	let startIndex = Builder.getCellIndex(MyMaze.cells[0][0]);
@@ -32,6 +45,30 @@ const mySketch = (sketch) => {
 		} else {
 			playStatus.textContent = "";
 		}
+	};
+
+	const syncSizeSlider = () => {
+		const slider = document.getElementById("mazeSize");
+		const display = document.getElementById("mazeSizeDisplay");
+		if (!slider || !display) return;
+
+		maxCells = getMaxCellsForScreen();
+		mazeCells = Math.min(mazeCells, maxCells);
+		mazeCells = Math.max(MIN_CELLS, mazeCells);
+
+		slider.min = String(MIN_CELLS);
+		slider.max = String(maxCells);
+		slider.value = String(mazeCells);
+		display.textContent = `${mazeCells} x ${mazeCells}`;
+	};
+
+	const applyMazeSize = (cells) => {
+		mazeCells = cells;
+		mazeSizeWidth = mazeCells * cellWidth;
+		mazeSizeHeight = mazeCells * cellHeight;
+		sketch.resizeCanvas(mazeSizeWidth, mazeSizeHeight);
+		resetMaze();
+		syncSizeSlider();
 	};
 
 	sketch.setup = () => {
@@ -70,28 +107,19 @@ const mySketch = (sketch) => {
 			resetMaze();
 		});
 
-		let sliderMazeWidth = document.getElementById("mazeWidth");
-		let sliderMazeHeight = document.getElementById("mazeHeight");
-		let sliderMWDisplay = document.getElementById("mazeW");
-		let sliderMHDisplay = document.getElementById("mazeH");
-
-		sliderMazeWidth.setAttribute("max", canvas.width);
-		sliderMazeWidth.setAttribute("value", mazeSizeWidth);
-		sliderMazeHeight.setAttribute("max", canvas.height);
-		sliderMazeHeight.setAttribute("value", mazeSizeHeight);
-		sliderMWDisplay.innerHTML = `${mazeSizeWidth / 40} Columns`;
-		sliderMHDisplay.innerHTML = `${mazeSizeHeight / 40} Rows`;
-
-		sliderMazeWidth.onchange = () => {
-			mazeSizeWidth = sliderMazeWidth.value;
-			sliderMWDisplay.innerHTML = `${sliderMazeWidth.value / 40} Columns`;
-			resetMaze();
+		const sliderMazeSize = document.getElementById("mazeSize");
+		syncSizeSlider();
+		sliderMazeSize.onchange = () => {
+			applyMazeSize(Number(sliderMazeSize.value));
 		};
-		sliderMazeHeight.onchange = () => {
-			mazeSizeHeight = sliderMazeHeight.value;
-			sliderMHDisplay.innerHTML = `${sliderMazeHeight.value / 40} Rows`;
-			resetMaze();
-		};
+
+		window.addEventListener("resize", () => {
+			const previousMax = maxCells;
+			syncSizeSlider();
+			if (maxCells !== previousMax && mazeCells > maxCells) {
+				applyMazeSize(maxCells);
+			}
+		});
 	}
 
 	sketch.draw = () => {
