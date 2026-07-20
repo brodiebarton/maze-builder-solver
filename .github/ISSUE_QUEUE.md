@@ -5,8 +5,8 @@ Ordered backlog for sequential, one-issue-per-agent work. Update status/branch/P
 | Order | Issue | Title | Status | Branch | PR |
 |------:|------:|-------|--------|--------|----|
 | 1 | #14 | No Javascript Handling | done | cursor/issue-14-noscript-94f9 | https://github.com/brodiebarton/maze-builder-solver/pull/22 |
-| 2 | #18 | Allow for larger maze | in_progress | cursor/issue-18-larger-maze-94f9 | |
-| 3 | #15 | Solve Timers | pending | | |
+| 2 | #18 | Allow for larger maze | done | cursor/issue-18-larger-maze-94f9 | https://github.com/brodiebarton/maze-builder-solver/pull/23 |
+| 3 | #15 | Solve Timers | in_progress | cursor/issue-15-solve-timers-94f9 | |
 | 4 | #17 | Track players movement | pending | | |
 | 5 | #19 | Fix Simple Agent to be simple AI opponent | pending | | |
 | 6 | #16 | UI Improvements | pending | | |

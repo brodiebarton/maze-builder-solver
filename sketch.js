@@ -35,6 +35,43 @@ const mySketch = (sketch) => {
 	let isPlayable = false;
 	let hasWon = false;
 
+	let playerTimerStart = null;
+	let playerTimerElapsedMs = 0;
+	let playerTimerRunning = false;
+	let solverTimerStart = null;
+	let solverTimerElapsedMs = 0;
+	let solverTimerRunning = false;
+	let wasSolverRunning = false;
+
+	const formatSeconds = (ms) => `${(ms / 1000).toFixed(2)}s`;
+
+	const updateTimerDisplays = () => {
+		const playerTimerEl = document.getElementById("playerTimer");
+		const solverTimerEl = document.getElementById("solverTimer");
+		const now = performance.now();
+
+		const playerMs = playerTimerRunning && playerTimerStart !== null
+			? now - playerTimerStart
+			: playerTimerElapsedMs;
+		const solverMs = solverTimerRunning && solverTimerStart !== null
+			? now - solverTimerStart
+			: solverTimerElapsedMs;
+
+		if (playerTimerEl) playerTimerEl.textContent = `Player: ${formatSeconds(playerMs)}`;
+		if (solverTimerEl) solverTimerEl.textContent = `Solver: ${formatSeconds(solverMs)}`;
+	};
+
+	const resetTimers = () => {
+		playerTimerStart = null;
+		playerTimerElapsedMs = 0;
+		playerTimerRunning = false;
+		solverTimerStart = null;
+		solverTimerElapsedMs = 0;
+		solverTimerRunning = false;
+		wasSolverRunning = false;
+		updateTimerDisplays();
+	};
+
 	const updatePlayStatus = () => {
 		const playStatus = document.getElementById("playStatus");
 		if (!playStatus) return;
@@ -88,6 +125,7 @@ const mySketch = (sketch) => {
 					isPlayable = false;
 					hasWon = false;
 					player.reset(startNode);
+					resetTimers();
 					updatePlayStatus();
 				}
 			}
@@ -97,7 +135,15 @@ const mySketch = (sketch) => {
 		solveBtn.addEventListener("click", () => {
 			if (!Builder.isBuilding) {
 				if (Builder.cellStack.length > 0) {
+					const startingSolve = !Solver_AStar.isSolving;
 					Solver_AStar.isSolving = !Solver_AStar.isSolving;
+					if (startingSolve && Solver_AStar.isSolving) {
+						solverTimerStart = performance.now();
+						solverTimerElapsedMs = 0;
+						solverTimerRunning = true;
+						wasSolverRunning = true;
+						updateTimerDisplays();
+					}
 				}
 			}
 		});
@@ -157,9 +203,17 @@ const mySketch = (sketch) => {
 			displayNode(Solver_AStar.currentNode);
 		}
 
+		if (wasSolverRunning && !Solver_AStar.isSolving && solverTimerRunning) {
+			solverTimerElapsedMs = performance.now() - solverTimerStart;
+			solverTimerRunning = false;
+			wasSolverRunning = false;
+		}
+
 		if (Solver_AStar.path.length > 0) {
 			displaySolvePath(Solver_AStar.path);
 		}
+
+		updateTimerDisplays();
 
 		if (!Builder.isBuilding && MyMaze.numVisited === MyMaze.totalCells) {
 			if (!isPlayable) {
@@ -176,6 +230,16 @@ const mySketch = (sketch) => {
 	sketch.keyPressed = () => {
 		if (!isPlayable || Builder.isBuilding || hasWon) return;
 
+		const isArrowKey = sketch.keyCode === 38 || sketch.keyCode === 39
+			|| sketch.keyCode === 40 || sketch.keyCode === 37;
+		if (!isArrowKey) return;
+
+		if (!playerTimerRunning && playerTimerStart === null) {
+			playerTimerStart = performance.now();
+			playerTimerElapsedMs = 0;
+			playerTimerRunning = true;
+		}
+
 		let moved = false;
 		if (sketch.keyCode === 38) {
 			moved = player.move(MyMaze, -1, 0);
@@ -189,7 +253,12 @@ const mySketch = (sketch) => {
 
 		if (moved && player.hasReachedGoal(endNode)) {
 			hasWon = true;
+			if (playerTimerRunning) {
+				playerTimerElapsedMs = performance.now() - playerTimerStart;
+				playerTimerRunning = false;
+			}
 			updatePlayStatus();
+			updateTimerDisplays();
 		}
 	};
 
@@ -274,6 +343,7 @@ const mySketch = (sketch) => {
 		player = new Player(startNode.posX, startNode.posY);
 		isPlayable = false;
 		hasWon = false;
+		resetTimers();
 		updatePlayStatus();
 
 		// Calculate startNode h and f scores
