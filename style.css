@@ -44,6 +44,23 @@ span {
 	margin: 0.25em 0;
 }
 
+.raceOption {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4em;
+	margin-right: 1em;
+}
+
+#difficultySelect {
+	margin: 0.5em;
+	padding: 0.35em 0.6em;
+	font-size: 14px;
+}
+
+#difficultySelect:disabled {
+	opacity: 0.5;
+}
+
 #sketchContainer:focus {
 	outline: 2px solid rgb(59, 206, 255);
 	outline-offset: 2px;

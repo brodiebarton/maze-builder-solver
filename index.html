@@ -38,6 +38,18 @@
 					<p id="solverTimer" class="timerDisplay">Solver: 0.00s</p>
 					<p id="moveCount" class="timerDisplay">Moves: 0</p>
 					<br>
+					<label class="raceOption">
+						<input type="checkbox" id="raceToggle">
+						Race AI opponent
+					</label>
+					<label for="difficultySelect">Difficulty:</label>
+					<select id="difficultySelect" disabled>
+						<option value="easy">Easy</option>
+						<option value="medium" selected>Medium</option>
+						<option value="hard">Hard</option>
+						<option value="extreme">Extreme</option>
+					</select>
+					<br>
 					<label for="mazeSize">Set Maze Size:</label>
 					<input name="mazeSize" id="mazeSize" class="slider" type="range" step="1">
 					<span id="mazeSizeDisplay"></span>

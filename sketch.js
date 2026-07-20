@@ -4,13 +4,14 @@ import MazeBuilder from './MazeBuilder.js';
 import MazeSolver_AStar from './MazeSolver_AStar.js';
 import AStar_Node from './AStar_Node.js';
 import Player from './Player.js';
+import SimpleAgent from './SimpleAgent.js';
 
 
 const mySketch = (sketch) => {
 	const cellWidth = 40;
 	const cellHeight = 40;
 	const MIN_CELLS = 2;
-	const UI_RESERVE_PX = 220;
+	const UI_RESERVE_PX = 300;
 	const VIEWPORT_PADDING_PX = 32;
 
 	const getMaxCellsForScreen = () => {
@@ -32,8 +33,12 @@ const mySketch = (sketch) => {
 	let endNode = new AStar_Node(endIndex[1], endIndex[0]);
 	let Solver_AStar = new MazeSolver_AStar(startNode, endNode);
 	let player = new Player(startNode.posX, startNode.posY);
+	let agent = new SimpleAgent(startNode.posX, startNode.posY, "medium");
 	let isPlayable = false;
 	let hasWon = false;
+	let raceEnabled = false;
+	let raceStarted = false;
+	let agentWon = false;
 
 	let playerTimerStart = null;
 	let playerTimerElapsedMs = 0;
@@ -77,10 +82,14 @@ const mySketch = (sketch) => {
 	const updatePlayStatus = () => {
 		const playStatus = document.getElementById("playStatus");
 		if (!playStatus) return;
-		if (hasWon) {
-			playStatus.textContent = "You win!";
+		if (agentWon) {
+			playStatus.textContent = "AI wins!";
+		} else if (hasWon) {
+			playStatus.textContent = raceEnabled ? "You win the race!" : "You win!";
 		} else if (isPlayable && !Builder.isBuilding) {
-			playStatus.textContent = "Use arrow keys to play";
+			playStatus.textContent = raceEnabled
+				? "Use arrow keys to race the AI"
+				: "Use arrow keys to play";
 		} else {
 			playStatus.textContent = "";
 		}
@@ -110,6 +119,14 @@ const mySketch = (sketch) => {
 		syncSizeSlider();
 	};
 
+	const beginRaceIfNeeded = () => {
+		if (!raceEnabled || raceStarted || !isPlayable || Builder.isBuilding) return;
+		agent.setDifficulty(document.getElementById("difficultySelect")?.value || "medium");
+		agent.reset(startNode);
+		agent.startRace(MyMaze, endNode);
+		raceStarted = true;
+	};
+
 	sketch.setup = () => {
 		let canvas = sketch.createCanvas(mazeSizeWidth, mazeSizeHeight);
 		canvas.parent("sketchContainer");
@@ -126,7 +143,10 @@ const mySketch = (sketch) => {
 				if (Builder.isBuilding && !wasBuilding) {
 					isPlayable = false;
 					hasWon = false;
+					agentWon = false;
+					raceStarted = false;
 					player.reset(startNode);
+					agent.reset(startNode);
 					resetTimers();
 					updatePlayStatus();
 				}
@@ -153,6 +173,27 @@ const mySketch = (sketch) => {
 		const resetBtn = document.getElementById("resetButton");
 		resetBtn.addEventListener("click", () => {
 			resetMaze();
+		});
+
+		const raceToggle = document.getElementById("raceToggle");
+		const difficultySelect = document.getElementById("difficultySelect");
+		raceToggle.addEventListener("change", () => {
+			raceEnabled = raceToggle.checked;
+			difficultySelect.disabled = !raceEnabled;
+			if (!raceEnabled) {
+				raceStarted = false;
+				agentWon = false;
+				agent.reset(startNode);
+			} else {
+				agent.setDifficulty(difficultySelect.value);
+			}
+			updatePlayStatus();
+		});
+		difficultySelect.addEventListener("change", () => {
+			agent.setDifficulty(difficultySelect.value);
+			if (raceEnabled && !raceStarted) {
+				agent.reset(startNode);
+			}
 		});
 
 		const sliderMazeSize = document.getElementById("mazeSize");
@@ -228,13 +269,30 @@ const mySketch = (sketch) => {
 			}
 		}
 
+		if (raceStarted && !hasWon && !agentWon) {
+			agent.update(sketch.deltaTime);
+			if (agent.hasReachedGoal(endNode)) {
+				agentWon = true;
+				agent.isRacing = false;
+				if (playerTimerRunning) {
+					playerTimerElapsedMs = performance.now() - playerTimerStart;
+					playerTimerRunning = false;
+				}
+				updatePlayStatus();
+				updateTimerDisplays();
+			}
+		}
+
 		if (isPlayable) {
 			player.display(sketch, cellWidth, cellHeight);
+			if (raceEnabled) {
+				agent.display(sketch, cellWidth, cellHeight);
+			}
 		}
 	}
 
 	sketch.keyPressed = () => {
-		if (!isPlayable || Builder.isBuilding || hasWon) return;
+		if (!isPlayable || Builder.isBuilding || hasWon || agentWon) return;
 
 		const isArrowKey = sketch.keyCode === 38 || sketch.keyCode === 39
 			|| sketch.keyCode === 40 || sketch.keyCode === 37;
@@ -244,6 +302,7 @@ const mySketch = (sketch) => {
 			playerTimerStart = performance.now();
 			playerTimerElapsedMs = 0;
 			playerTimerRunning = true;
+			beginRaceIfNeeded();
 		}
 
 		let moved = false;
@@ -259,6 +318,7 @@ const mySketch = (sketch) => {
 
 		if (moved && player.hasReachedGoal(endNode)) {
 			hasWon = true;
+			agent.isRacing = false;
 			if (playerTimerRunning) {
 				playerTimerElapsedMs = performance.now() - playerTimerStart;
 				playerTimerRunning = false;
@@ -363,8 +423,15 @@ const mySketch = (sketch) => {
 		Solver_AStar = new MazeSolver_AStar(startNode, endNode);
 
 		player = new Player(startNode.posX, startNode.posY);
+		agent = new SimpleAgent(
+			startNode.posX,
+			startNode.posY,
+			document.getElementById("difficultySelect")?.value || "medium"
+		);
 		isPlayable = false;
 		hasWon = false;
+		agentWon = false;
+		raceStarted = false;
 		resetTimers();
 		updatePlayStatus();
 
