@@ -48,6 +48,7 @@ const mySketch = (sketch) => {
 	const updateTimerDisplays = () => {
 		const playerTimerEl = document.getElementById("playerTimer");
 		const solverTimerEl = document.getElementById("solverTimer");
+		const moveCountEl = document.getElementById("moveCount");
 		const now = performance.now();
 
 		const playerMs = playerTimerRunning && playerTimerStart !== null
@@ -59,6 +60,7 @@ const mySketch = (sketch) => {
 
 		if (playerTimerEl) playerTimerEl.textContent = `Player: ${formatSeconds(playerMs)}`;
 		if (solverTimerEl) solverTimerEl.textContent = `Solver: ${formatSeconds(solverMs)}`;
+		if (moveCountEl) moveCountEl.textContent = `Moves: ${player.moveCount}`;
 	};
 
 	const resetTimers = () => {
@@ -213,6 +215,10 @@ const mySketch = (sketch) => {
 			displaySolvePath(Solver_AStar.path);
 		}
 
+		if (hasWon && player.path.length > 1) {
+			displayPlayerPath(player.path);
+		}
+
 		updateTimerDisplays();
 
 		if (!Builder.isBuilding && MyMaze.numVisited === MyMaze.totalCells) {
@@ -258,6 +264,8 @@ const mySketch = (sketch) => {
 				playerTimerRunning = false;
 			}
 			updatePlayStatus();
+			updateTimerDisplays();
+		} else if (moved) {
 			updateTimerDisplays();
 		}
 	};
@@ -323,11 +331,25 @@ const mySketch = (sketch) => {
 	const displaySolvePath = (path) => {
 		sketch.noFill();
 		sketch.stroke(sketch.color(0, 250, 0));
+		sketch.strokeWeight(3);
 		sketch.beginShape();
 		for (let i = 0; i < path.length; i++) {
 			sketch.vertex(path[i].posX * cellWidth + cellWidth / 2, path[i].posY * cellHeight + cellHeight / 2);
 		}
 		sketch.endShape();
+		sketch.strokeWeight(1);
+	}
+
+	const displayPlayerPath = (path) => {
+		sketch.noFill();
+		sketch.stroke(sketch.color(255, 140, 0));
+		sketch.strokeWeight(3);
+		sketch.beginShape();
+		for (let i = 0; i < path.length; i++) {
+			sketch.vertex(path[i].posX * cellWidth + cellWidth / 2, path[i].posY * cellHeight + cellHeight / 2);
+		}
+		sketch.endShape();
+		sketch.strokeWeight(1);
 	}
 
 	const resetMaze = () => {

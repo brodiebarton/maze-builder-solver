@@ -2,11 +2,15 @@ export default class Player {
 	constructor(posX, posY) {
 		this.posX = posX;
 		this.posY = posY;
+		this.path = [{ posX, posY }];
+		this.moveCount = 0;
 	}
 
 	reset(startNode) {
 		this.posX = startNode.posX;
 		this.posY = startNode.posY;
+		this.path = [{ posX: startNode.posX, posY: startNode.posY }];
+		this.moveCount = 0;
 	}
 
 	canMove(maze, dRow, dCol) {
@@ -29,6 +33,8 @@ export default class Player {
 		if (!this.canMove(maze, dRow, dCol)) return false;
 		this.posX += dCol;
 		this.posY += dRow;
+		this.path.push({ posX: this.posX, posY: this.posY });
+		this.moveCount += 1;
 		return true;
 	}
 
