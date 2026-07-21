@@ -4,13 +4,27 @@ import MazeBuilder from './MazeBuilder.js';
 import MazeSolver_AStar from './MazeSolver_AStar.js';
 import AStar_Node from './AStar_Node.js';
 import Player from './Player.js';
+import SimpleAgent from './SimpleAgent.js';
 
 
 const mySketch = (sketch) => {
-	let mazeSizeWidth = 600;
-	let mazeSizeHeight = 600;
 	const cellWidth = 40;
 	const cellHeight = 40;
+	const MIN_CELLS = 2;
+	const UI_RESERVE_PX = 360;
+	const VIEWPORT_PADDING_PX = 32;
+
+	const getMaxCellsForScreen = () => {
+		const maxCols = Math.floor((window.innerWidth - VIEWPORT_PADDING_PX) / cellWidth);
+		const maxRows = Math.floor((window.innerHeight - UI_RESERVE_PX) / cellHeight);
+		return Math.max(MIN_CELLS, Math.min(maxCols, maxRows));
+	};
+
+	let maxCells = getMaxCellsForScreen();
+	let mazeCells = Math.max(MIN_CELLS, Math.floor(maxCells * 0.5));
+	let mazeSizeWidth = mazeCells * cellWidth;
+	let mazeSizeHeight = mazeCells * cellHeight;
+
 	let MyMaze = new Maze(mazeSizeWidth, mazeSizeHeight, cellWidth, cellHeight);
 	let Builder = new MazeBuilder(MyMaze);
 	let startIndex = Builder.getCellIndex(MyMaze.cells[0][0]);
@@ -19,19 +33,98 @@ const mySketch = (sketch) => {
 	let endNode = new AStar_Node(endIndex[1], endIndex[0]);
 	let Solver_AStar = new MazeSolver_AStar(startNode, endNode);
 	let player = new Player(startNode.posX, startNode.posY);
+	let agent = new SimpleAgent(startNode.posX, startNode.posY, "medium");
 	let isPlayable = false;
 	let hasWon = false;
+	let raceEnabled = false;
+	let raceStarted = false;
+	let agentWon = false;
+
+	let playerTimerStart = null;
+	let playerTimerElapsedMs = 0;
+	let playerTimerRunning = false;
+	let solverTimerStart = null;
+	let solverTimerElapsedMs = 0;
+	let solverTimerRunning = false;
+	let wasSolverRunning = false;
+
+	const formatSeconds = (ms) => `${(ms / 1000).toFixed(2)}s`;
+
+	const updateTimerDisplays = () => {
+		const playerTimerEl = document.getElementById("playerTimer");
+		const solverTimerEl = document.getElementById("solverTimer");
+		const moveCountEl = document.getElementById("moveCount");
+		const now = performance.now();
+
+		const playerMs = playerTimerRunning && playerTimerStart !== null
+			? now - playerTimerStart
+			: playerTimerElapsedMs;
+		const solverMs = solverTimerRunning && solverTimerStart !== null
+			? now - solverTimerStart
+			: solverTimerElapsedMs;
+
+		if (playerTimerEl) playerTimerEl.textContent = `Player: ${formatSeconds(playerMs)}`;
+		if (solverTimerEl) solverTimerEl.textContent = `Solver: ${formatSeconds(solverMs)}`;
+		if (moveCountEl) moveCountEl.textContent = `Moves: ${player.moveCount}`;
+	};
+
+	const resetTimers = () => {
+		playerTimerStart = null;
+		playerTimerElapsedMs = 0;
+		playerTimerRunning = false;
+		solverTimerStart = null;
+		solverTimerElapsedMs = 0;
+		solverTimerRunning = false;
+		wasSolverRunning = false;
+		updateTimerDisplays();
+	};
 
 	const updatePlayStatus = () => {
 		const playStatus = document.getElementById("playStatus");
 		if (!playStatus) return;
-		if (hasWon) {
-			playStatus.textContent = "You win!";
+		if (agentWon) {
+			playStatus.textContent = "AI wins!";
+		} else if (hasWon) {
+			playStatus.textContent = raceEnabled ? "You win the race!" : "You win!";
 		} else if (isPlayable && !Builder.isBuilding) {
-			playStatus.textContent = "Use arrow keys to play";
+			playStatus.textContent = raceEnabled
+				? "Use arrow keys to race the AI"
+				: "Use arrow keys to play";
 		} else {
 			playStatus.textContent = "";
 		}
+	};
+
+	const syncSizeSlider = () => {
+		const slider = document.getElementById("mazeSize");
+		const display = document.getElementById("mazeSizeDisplay");
+		if (!slider || !display) return;
+
+		maxCells = getMaxCellsForScreen();
+		mazeCells = Math.min(mazeCells, maxCells);
+		mazeCells = Math.max(MIN_CELLS, mazeCells);
+
+		slider.min = String(MIN_CELLS);
+		slider.max = String(maxCells);
+		slider.value = String(mazeCells);
+		display.textContent = `${mazeCells} x ${mazeCells}`;
+	};
+
+	const applyMazeSize = (cells) => {
+		mazeCells = cells;
+		mazeSizeWidth = mazeCells * cellWidth;
+		mazeSizeHeight = mazeCells * cellHeight;
+		sketch.resizeCanvas(mazeSizeWidth, mazeSizeHeight);
+		resetMaze();
+		syncSizeSlider();
+	};
+
+	const beginRaceIfNeeded = () => {
+		if (!raceEnabled || raceStarted || !isPlayable || Builder.isBuilding) return;
+		agent.setDifficulty(document.getElementById("difficultySelect")?.value || "medium");
+		agent.reset(startNode);
+		agent.startRace(MyMaze, endNode);
+		raceStarted = true;
 	};
 
 	sketch.setup = () => {
@@ -50,7 +143,11 @@ const mySketch = (sketch) => {
 				if (Builder.isBuilding && !wasBuilding) {
 					isPlayable = false;
 					hasWon = false;
+					agentWon = false;
+					raceStarted = false;
 					player.reset(startNode);
+					agent.reset(startNode);
+					resetTimers();
 					updatePlayStatus();
 				}
 			}
@@ -60,7 +157,15 @@ const mySketch = (sketch) => {
 		solveBtn.addEventListener("click", () => {
 			if (!Builder.isBuilding) {
 				if (Builder.cellStack.length > 0) {
+					const startingSolve = !Solver_AStar.isSolving;
 					Solver_AStar.isSolving = !Solver_AStar.isSolving;
+					if (startingSolve && Solver_AStar.isSolving) {
+						solverTimerStart = performance.now();
+						solverTimerElapsedMs = 0;
+						solverTimerRunning = true;
+						wasSolverRunning = true;
+						updateTimerDisplays();
+					}
 				}
 			}
 		});
@@ -70,28 +175,40 @@ const mySketch = (sketch) => {
 			resetMaze();
 		});
 
-		let sliderMazeWidth = document.getElementById("mazeWidth");
-		let sliderMazeHeight = document.getElementById("mazeHeight");
-		let sliderMWDisplay = document.getElementById("mazeW");
-		let sliderMHDisplay = document.getElementById("mazeH");
+		const raceToggle = document.getElementById("raceToggle");
+		const difficultySelect = document.getElementById("difficultySelect");
+		raceToggle.addEventListener("change", () => {
+			raceEnabled = raceToggle.checked;
+			difficultySelect.disabled = !raceEnabled;
+			if (!raceEnabled) {
+				raceStarted = false;
+				agentWon = false;
+				agent.reset(startNode);
+			} else {
+				agent.setDifficulty(difficultySelect.value);
+			}
+			updatePlayStatus();
+		});
+		difficultySelect.addEventListener("change", () => {
+			agent.setDifficulty(difficultySelect.value);
+			if (raceEnabled && !raceStarted) {
+				agent.reset(startNode);
+			}
+		});
 
-		sliderMazeWidth.setAttribute("max", canvas.width);
-		sliderMazeWidth.setAttribute("value", mazeSizeWidth);
-		sliderMazeHeight.setAttribute("max", canvas.height);
-		sliderMazeHeight.setAttribute("value", mazeSizeHeight);
-		sliderMWDisplay.innerHTML = `${mazeSizeWidth / 40} Columns`;
-		sliderMHDisplay.innerHTML = `${mazeSizeHeight / 40} Rows`;
+		const sliderMazeSize = document.getElementById("mazeSize");
+		syncSizeSlider();
+		sliderMazeSize.onchange = () => {
+			applyMazeSize(Number(sliderMazeSize.value));
+		};
 
-		sliderMazeWidth.onchange = () => {
-			mazeSizeWidth = sliderMazeWidth.value;
-			sliderMWDisplay.innerHTML = `${sliderMazeWidth.value / 40} Columns`;
-			resetMaze();
-		};
-		sliderMazeHeight.onchange = () => {
-			mazeSizeHeight = sliderMazeHeight.value;
-			sliderMHDisplay.innerHTML = `${sliderMazeHeight.value / 40} Rows`;
-			resetMaze();
-		};
+		window.addEventListener("resize", () => {
+			const previousMax = maxCells;
+			syncSizeSlider();
+			if (maxCells !== previousMax && mazeCells > maxCells) {
+				applyMazeSize(maxCells);
+			}
+		});
 	}
 
 	sketch.draw = () => {
@@ -129,9 +246,21 @@ const mySketch = (sketch) => {
 			displayNode(Solver_AStar.currentNode);
 		}
 
+		if (wasSolverRunning && !Solver_AStar.isSolving && solverTimerRunning) {
+			solverTimerElapsedMs = performance.now() - solverTimerStart;
+			solverTimerRunning = false;
+			wasSolverRunning = false;
+		}
+
 		if (Solver_AStar.path.length > 0) {
 			displaySolvePath(Solver_AStar.path);
 		}
+
+		if (hasWon && player.path.length > 1) {
+			displayPlayerPath(player.path);
+		}
+
+		updateTimerDisplays();
 
 		if (!Builder.isBuilding && MyMaze.numVisited === MyMaze.totalCells) {
 			if (!isPlayable) {
@@ -140,13 +269,41 @@ const mySketch = (sketch) => {
 			}
 		}
 
+		if (raceStarted && !hasWon && !agentWon) {
+			agent.update(sketch.deltaTime);
+			if (agent.hasReachedGoal(endNode)) {
+				agentWon = true;
+				agent.isRacing = false;
+				if (playerTimerRunning) {
+					playerTimerElapsedMs = performance.now() - playerTimerStart;
+					playerTimerRunning = false;
+				}
+				updatePlayStatus();
+				updateTimerDisplays();
+			}
+		}
+
 		if (isPlayable) {
 			player.display(sketch, cellWidth, cellHeight);
+			if (raceEnabled) {
+				agent.display(sketch, cellWidth, cellHeight);
+			}
 		}
 	}
 
 	sketch.keyPressed = () => {
-		if (!isPlayable || Builder.isBuilding || hasWon) return;
+		if (!isPlayable || Builder.isBuilding || hasWon || agentWon) return;
+
+		const isArrowKey = sketch.keyCode === 38 || sketch.keyCode === 39
+			|| sketch.keyCode === 40 || sketch.keyCode === 37;
+		if (!isArrowKey) return;
+
+		if (!playerTimerRunning && playerTimerStart === null) {
+			playerTimerStart = performance.now();
+			playerTimerElapsedMs = 0;
+			playerTimerRunning = true;
+			beginRaceIfNeeded();
+		}
 
 		let moved = false;
 		if (sketch.keyCode === 38) {
@@ -161,7 +318,15 @@ const mySketch = (sketch) => {
 
 		if (moved && player.hasReachedGoal(endNode)) {
 			hasWon = true;
+			agent.isRacing = false;
+			if (playerTimerRunning) {
+				playerTimerElapsedMs = performance.now() - playerTimerStart;
+				playerTimerRunning = false;
+			}
 			updatePlayStatus();
+			updateTimerDisplays();
+		} else if (moved) {
+			updateTimerDisplays();
 		}
 	};
 
@@ -226,11 +391,25 @@ const mySketch = (sketch) => {
 	const displaySolvePath = (path) => {
 		sketch.noFill();
 		sketch.stroke(sketch.color(0, 250, 0));
+		sketch.strokeWeight(3);
 		sketch.beginShape();
 		for (let i = 0; i < path.length; i++) {
 			sketch.vertex(path[i].posX * cellWidth + cellWidth / 2, path[i].posY * cellHeight + cellHeight / 2);
 		}
 		sketch.endShape();
+		sketch.strokeWeight(1);
+	}
+
+	const displayPlayerPath = (path) => {
+		sketch.noFill();
+		sketch.stroke(sketch.color(255, 140, 0));
+		sketch.strokeWeight(3);
+		sketch.beginShape();
+		for (let i = 0; i < path.length; i++) {
+			sketch.vertex(path[i].posX * cellWidth + cellWidth / 2, path[i].posY * cellHeight + cellHeight / 2);
+		}
+		sketch.endShape();
+		sketch.strokeWeight(1);
 	}
 
 	const resetMaze = () => {
@@ -244,8 +423,16 @@ const mySketch = (sketch) => {
 		Solver_AStar = new MazeSolver_AStar(startNode, endNode);
 
 		player = new Player(startNode.posX, startNode.posY);
+		agent = new SimpleAgent(
+			startNode.posX,
+			startNode.posY,
+			document.getElementById("difficultySelect")?.value || "medium"
+		);
 		isPlayable = false;
 		hasWon = false;
+		agentWon = false;
+		raceStarted = false;
+		resetTimers();
 		updatePlayStatus();
 
 		// Calculate startNode h and f scores
